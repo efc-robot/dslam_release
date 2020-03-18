@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+
+<arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" />
+<arg name="sp_prototxt" value="/home/yujc/robotws/DSLAM_release/src/ROS-DSLAM/superpointlib/model/superpoint.prototxt" />
+<arg name="sp_caffemodel" value="/home/yujc/robotws/DSLAM_release/src/ROS-DSLAM/superpointlib/model/superpoint.caffemodel" />
+  
+  
+  <node name="publish" pkg="dslam_sp" required="true" type="publish_merge" args="-p $(arg datasetpath)"/>
+  
+  <node name="sp_EF" pkg="dslam_sp" required="true" type="superpoint_EF" args="-P $(arg sp_prototxt) -W $(arg sp_caffemodel)" output="screen">
+    <remap from="image" to="/merge/img_depth_file" />
+  </node>
+  
+  <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry" output="screen">
+    <remap from="feature" to="/superpoint_EF/featurepoints_descriptors" />
+  </node>
+  
+  <node name="gen_tf" pkg="dslam_sp" required="true" type="generate_track_node.py" output="screen">
+    <remap from="relpose" to="/visual_odometry/transform_relative" />
+  </node>
+
+</launch>

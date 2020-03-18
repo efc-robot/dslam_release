@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+
+  <include file="$(find mynt_eye_ros_wrapper)/launch/mynteye.launch" />
+
+  <node name="merge" pkg="merge_img_depth" type="merge_img_depth_node"/>
+  
+  <node name="sp_EF" pkg="superpoint_EF" type="superpoint_EF_node" output="screen">
+    <remap from="image" to="/merge/img_depth" />
+  </node>
+  
+  <node name="vo" pkg="visual_odometry" type="visual_odometry_node" output="screen">
+    <remap from="feature" to="/superpoint_EF/featurepoints_descriptors" />
+  </node>
+  
+  <node name="gen_tf" pkg="generate_track" type="generate_track_node" output="screen">
+    <remap from="transform" to="/visual_odometry/transform_relative" />
+  </node>
+
+</launch>

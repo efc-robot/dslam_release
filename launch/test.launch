@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>  
+
+  <arg name="gemweightspath" value="/home/yujc/robotws/DSLAM_release/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth" />
+  <arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" />
+  <arg name="robotid1" value="1" />
+  <arg name="framestart1" value="1" />
+  <arg name="frameend1" value="2874" />
+  
+<!--   
+  <node name="publish" pkg="dslam_sp" required="true" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)"/>
+  
+  
+  <node name="loop_fnames" pkg="dslam_sp" required="true" type="vo_loop_fnames_orb" args="-p $(arg datasetpath)" output="screen">
+  </node> -->
+
+
+  <node name="publish" pkg="dslam_sp" required="true" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)"/>
+
+  <node name="loop_str_frames" pkg="dslam_sp" required="true" type="string2frame.py" args="-p $(arg datasetpath) -i $(arg robotid1)" output="screen">
+  <remap from="loopframe" to="loopframe_1" />
+  </node>
+
+  <node name="loop_frames" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
+  <remap from="loopframes" to="loopframe_1" />
+  </node>
+  
+
+
+</launch>
