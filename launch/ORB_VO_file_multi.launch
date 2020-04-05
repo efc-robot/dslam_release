@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-<arg name="gemweightspath" value="/home/yujc/robotws/DSLAM_release/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth" />
-<arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" />
+<arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
+<arg name="datasetpath" value="/home/xuzhl/dataset/image_503_loop/pic/" />
 <arg name="robotid1" value="1" />
 <arg name="framestart1" value="1" />
 <arg name="frameend1" value="1700" />
@@ -9,7 +9,7 @@
 <arg name="framestart2" value="1200" />
 <arg name="frameend2" value="2874" />
 
-  <node name="publish1" pkg="dslam_sp" required="true" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)">
+  <node name="publish1" pkg="dslam_sp" required="false" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)">
     <remap from="/merge/img_depth_file" to="/robot1/merge/img_depth_file" />
     <remap from="/mynteye/left_rect/image" to="/robot1/mynteye/left_rect/image" />
     <remap from="/mynteye/left_rect/depth" to="/robot1/mynteye/left_rect/depth" />
@@ -106,5 +106,7 @@
   <remap from="loopframes" to="/robot2/loopframe" />
   <remap from="VO_loop_relpose" to="/robot2/looppose" />
   </node>
+
+  <node name="rviz" pkg="rviz" required="true" type="rviz" output="screen"/>
 
 </launch>

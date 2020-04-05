@@ -5,7 +5,7 @@ from PIL import Image
 import os
 import rospy
 from tf_conversions import posemath
-from dslam_sp.msg import TransformStampedArray, PoseStampedArray
+from dslam_sp.msg import TransformStampedArray, PoseStampedArray, TransformStamped_with_image, Pose_with_image
 import tf2_ros
 from geometry_msgs.msg import TransformStamped, PoseStamped, Pose, PoseArray
 from cv_bridge import CvBridge, CvBridgeError
@@ -20,20 +20,35 @@ transArray = TransformStampedArray()
 LooptransArray = TransformStampedArray()
 poseStampedArray = PoseStampedArray()
 posearray_pub = None
+pose_with_image_pub = None
 poseStampedArraylock = threading.Lock()
 
 def callback(data):
-    global posearray_pub, transArray, poseStampedArray, poseStampedArraylock
-    print(data)
+    global posearray_pub, pose_with_image_pub, transArray, poseStampedArray, poseStampedArraylock
+    print(data.TF)
     poseStampedArraylock.acquire()
-    trackutils.appendTrans2PoseStampedArray(data, poseStampedArray)
-    trackutils.appendTrans2TransArray(data, transArray)    
+    trackutils.appendTrans2PoseStampedArray(data.TF, poseStampedArray)
+    trackutils.appendTrans2TransArray(data.TF, transArray)    
     poseStampedArraylock.release()
-    posearray = PoseArray()
-    posearray.header.frame_id = "map"
 
-    trackutils.StampedArray2PoseArray(poseStampedArray, posearray)
-    posearray_pub.publish(posearray)
+    vo_posearray = PoseArray()
+    map_posearray = PoseArray()
+    map_posearray.header.frame_id = "map"
+
+    trackutils.StampedArray2PoseArray(poseStampedArray, vo_posearray)
+    trackutils.VOPoseArray2MapPoseArray(vo_posearray, map_posearray)
+    
+    posearray_pub.publish(map_posearray)
+
+    # init_pose = Pose()
+    # init_pose.orientation.x = 0.7071
+    # init_pose.orientation.w = 0.7071
+    pose_with_image = Pose_with_image()
+    pose_with_image.pose = map_posearray.poses[-1]
+    pose_with_image.image = data.image
+    pose_with_image.depth = data.depth
+    pose_with_image.P = data.P
+    pose_with_image_pub.publish(pose_with_image)
 
 BackendRunning = False
 NewLoop = False
@@ -91,13 +106,14 @@ def BackendOpt(transArray,poseStampedArray,LooptransArray,posearray_pub):
     # posearray_pub.publish(posearray)
 
 def main():
-    global posearray_pub
+    global posearray_pub, pose_with_image_pub
     signal.signal(signal.SIGINT, trackutils.quit)                                
     signal.signal(signal.SIGTERM, trackutils.quit)
     rospy.init_node('generate_track_py', anonymous=True)
-    rospy.Subscriber("relpose", TransformStamped, callback)
+    rospy.Subscriber("relpose", TransformStamped_with_image, callback)
     rospy.Subscriber("looppose", TransformStamped, callback_loop)
     posearray_pub = rospy.Publisher("posearray",PoseArray, queue_size=3)
+    pose_with_image_pub = rospy.Publisher("pose_with_image",Pose_with_image, queue_size=3)
     backt = threading.Thread(target=BackendThread)
     backt.setDaemon(True)
     backt.start()

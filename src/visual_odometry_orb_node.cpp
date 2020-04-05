@@ -217,6 +217,21 @@ void feature_Callback(const dslam_sp::EF_output::ConstPtr &msg)
                     TF_msg.transform.translation.x, TF_msg.transform.translation.y, TF_msg.transform.translation.z,
                     TF_msg.transform.rotation.x, TF_msg.transform.rotation.y, TF_msg.transform.rotation.z, TF_msg.transform.rotation.w); //输出
     }
+    else
+    {
+        geometry_msgs::TransformStamped TF_msg;
+        TF_msg.header = msg->header;
+        TF_msg.child_frame_id = header_prev.frame_id;
+        TF_msg.transform.translation.x = 0;
+        TF_msg.transform.translation.y = 0;
+        TF_msg.transform.translation.z = 0;
+        TF_msg.transform.rotation.x = 0.7071;
+        TF_msg.transform.rotation.y = 0;
+        TF_msg.transform.rotation.z = 0;
+        TF_msg.transform.rotation.w = 0.7071;
+        pub.publish(TF_msg);//发布msg
+    }
+    
     
     points_prev = points_curr;
     desc_prev = desc_curr;

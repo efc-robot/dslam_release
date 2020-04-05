@@ -1,6 +1,7 @@
 #include <ros/ros.h>   
 #include <geometry_msgs/TransformStamped.h>   
 #include <dslam_sp/EF_output.h>
+#include <dslam_sp/TransformStamped_with_image.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <std_msgs/Time.h>
@@ -16,7 +17,7 @@ using namespace cv;
 using namespace std;
 
 string g_window_name;
-ros::Publisher pub;
+ros::Publisher pub, pub_with_image;
 
 vector<Point2f> points_prev;
 Mat desc_prev;
@@ -89,7 +90,7 @@ void feature_Callback(const dslam_sp::EF_output::ConstPtr &msg)
         // cout << depth_curr << endl;
         Eigen::Quaterniond q;
         Mat t;
-        int matchpointNum = ORB_Match_VO(points_prev,points_curr, desc_prev, desc_curr, depth_prev, desc_curr, msg->P, q, t);
+        int matchpointNum = ORB_Match_VO(points_prev,points_curr, desc_prev, desc_curr, depth_prev, depth_curr, msg->P, q, t);
 
 
         
@@ -107,9 +108,16 @@ void feature_Callback(const dslam_sp::EF_output::ConstPtr &msg)
         pub.publish(TF_msg);//发布msg
         
         cout << "child_frame_id:" << header_prev.frame_id << " frame_id:" << msg->header.frame_id << endl;
-        ROS_INFO("stamp:%d.%d translation:%f %f %f rotation:%f %f %f", TF_msg.header.stamp.sec, TF_msg.header.stamp.nsec,
+        ROS_INFO("stamp:%d.%d translation:%f %f %f rotation:%f %f %f %f", TF_msg.header.stamp.sec, TF_msg.header.stamp.nsec,
                     TF_msg.transform.translation.x, TF_msg.transform.translation.y, TF_msg.transform.translation.z,
                     TF_msg.transform.rotation.x, TF_msg.transform.rotation.y, TF_msg.transform.rotation.z, TF_msg.transform.rotation.w); //输出
+
+        dslam_sp::TransformStamped_with_image TF_msg_with_image;
+        TF_msg_with_image.TF = TF_msg;
+        TF_msg_with_image.image = msg->image;
+        TF_msg_with_image.depth = msg->depth;
+        TF_msg_with_image.P = msg->P;
+        pub_with_image.publish(TF_msg_with_image);//发布msg
     }
     
     points_prev = points_curr;
@@ -133,6 +141,7 @@ int main(int argc, char **argv)
   g_window_name = topic;
   
   pub = n.advertise<geometry_msgs::TransformStamped>("/visual_odometry/transform_relative", 1); //创建publisher，往"transform_relative"话题上发布消息
+  pub_with_image = n.advertise<dslam_sp::TransformStamped_with_image>("/visual_odometry/transform_relative_with_image", 1); //创建publisher，往"transform_relative_with_image"话题上发布消息
   
   namedWindow( g_window_name, WINDOW_AUTOSIZE );// Create a window for display.
   

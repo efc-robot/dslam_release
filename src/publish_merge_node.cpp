@@ -66,6 +66,8 @@ int main(int argc, char **argv)
   ros::Publisher pub_info = n.advertise<sensor_msgs::CameraInfo>("/mynteye/left_rect/camera_info", 1); //创建publisher，往话题上发布消息
   ros::Publisher pub_image = n.advertise<sensor_msgs::Image>("/mynteye/left_rect/image", 1); //创建publisher，往话题上发布消息
   ros::Publisher pub_depth = n.advertise<sensor_msgs::Image>("/mynteye/left_rect/depth", 1); //创建publisher，往话题上发布消息
+  ros::Rate loop_rate1(0.5);   //定义发布的频率，20HZ 
+  loop_rate1.sleep();//根据前面的定义的loop_rate,设置1s的暂停
   ros::Rate loop_rate(6);   //定义发布的频率，20HZ 
   
   while (ros::ok() && tmp < frameend)   //循环发布msg

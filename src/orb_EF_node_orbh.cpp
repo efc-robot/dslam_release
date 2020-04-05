@@ -119,6 +119,8 @@ void img_Callback(const dslam_sp::image_depth::ConstPtr &msg, Ptr<FeatureDetecto
     
     sensor_msgs::ImagePtr dp_ptr = cv_bridge::CvImage(std_msgs::Header(), msg->depth.encoding, depth_resized).toImageMsg();
     feature_msg.depth = *dp_ptr;
+    sensor_msgs::ImagePtr im_ptr = cv_bridge::CvImage(std_msgs::Header(), msg->image.encoding, image_resized).toImageMsg();
+    feature_msg.image = *im_ptr;
     
     for(int i = 0; i < kpts.size(); i++)
     { 

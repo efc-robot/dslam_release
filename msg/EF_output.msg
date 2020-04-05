@@ -11,3 +11,4 @@ KeyPoints_vector    keypoints
 Descriptors_vector  descriptors               
 sensor_msgs/Image   depth 
 float64[12]         P     
+sensor_msgs/Image   image

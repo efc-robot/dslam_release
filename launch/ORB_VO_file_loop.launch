@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="gemweightspath" value="/home/yujc/robotws/DSLAM_release/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth" />
-  <arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" />
+  <arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
+  <arg name="datasetpath" value="/home/xuzhl/dataset/image_503_loop/pic/" />
   <arg name="robotid1" value="0" />
   <arg name="framestart1" value="1" />
   <arg name="frameend1" value="2874" />
   
   
-  <node name="publish" pkg="dslam_sp" required="true" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)"/>
+  <node name="publish" pkg="dslam_sp" required="false" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)"/>
   
   <node name="sp_ORB" pkg="dslam_sp" required="true" type="orb_EF" output="screen">
     <remap from="image" to="/merge/img_depth_file" />
@@ -20,7 +20,7 @@
 
     
   <node name="gen_tf" pkg="dslam_sp" required="true" type="generate_track_node.py" output="screen">
-    <remap from="relpose" to="/visual_odometry/transform_relative" />
+    <remap from="relpose" to="/visual_odometry/transform_relative_with_image" />
   </node>
 
   <node name="gem_extract" pkg="dslam_sp" required="true" type="extract_feature_ros.py"  args="-w $(arg gemweightspath)" output="screen" >
@@ -48,7 +48,11 @@
   <remap from="loopframes" to="/robot1/loopframe" />
   <remap from="VO_loop_relpose" to="/looppose" />
   </node>
-  
 
+  <node name="map_octomap" pkg="dslam_sp" required="true" type="rgbd2octomap_ros" output="screen">
+    <remap from="data" to="/pose_with_image" />
+  </node>
+  
+<node name="rviz" pkg="rviz" required="true" type="rviz" output="screen"/>
 
 </launch>

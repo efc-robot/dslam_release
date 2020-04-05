@@ -221,7 +221,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "orb_EF", ros::init_options::AnonymousName);
   if (ros::names::remap("image") == "image") {
     ROS_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
-             "\t$ rosrun superpoint_EF superpoint_EF_node image:=<image topic> [transport]");
+             "\t$ rosrun orb_EF orb_EF_node image:=<image topic> [transport]");
   }
 
   ros::NodeHandle n;

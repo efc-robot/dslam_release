@@ -6,7 +6,7 @@ add_compile_options(-std=c++11)
 
 SET(CPU_ARCH x86_64)
 ##SP## SET(CAFFE_DIR /home/yujc/robotws/caffe-ssd/) #选择caffe路径
-SET(G2O_CMAKE_MODULES /home/yujc/robotws/g2o/cmake_modules/)
+SET(G2O_CMAKE_MODULES /home/xuzhl/git_workspace/g2o/cmake_modules/)
 ##SP## SET(SUPERPOINT_LIB ${PROJECT_SOURCE_DIR}/superpointlib/lib/libsuperpoint.so)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -29,6 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   geometry_msgs
   cv_bridge
+  octomap_server
   tf
   tf2_geometry_msgs
 )
@@ -87,7 +88,9 @@ add_message_files(
   EF_output.msg
   PRrepresentor.msg
   TransformStampedArray.msg
+  TransformStamped_with_image.msg
   PoseStampedArray.msg
+  Pose_with_image.msg
   MatchedFrame.msg
   InterMatch.msg
 )
@@ -152,7 +155,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES dslam_sp
 #  CATKIN_DEPENDS roscpp std_msgs
-   CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs message_runtime tf tf2_geometry_msgs
+   CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs message_runtime tf tf2_geometry_msgs octomap_server
 #  DEPENDS system_lib
 )
 
@@ -199,6 +202,7 @@ add_executable(orb_EF src/orb_EF_node_orbh.cpp)
 ##SP## add_executable(visual_odometry src/visual_odometry_node.cpp)
 add_executable(visual_odometry_orb src/visual_odometry_orb_node_orbh.cpp)
 add_executable(generate_track src/generate_track_node.cpp)
+add_executable(rgbd2octomap_ros src/rgbd2octomap_ros.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -219,6 +223,7 @@ add_dependencies(vo_loop_frames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 ##SP## add_dependencies(visual_odometry ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visual_odometry_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(generate_track ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(rgbd2octomap_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(merge_img_depth
@@ -277,6 +282,10 @@ target_link_libraries(vo_loop_frames_orb
   ${G2O_LIBS}
 )
 target_link_libraries(generate_track
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+target_link_libraries(rgbd2octomap_ros
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )

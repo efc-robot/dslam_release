@@ -202,6 +202,14 @@ def StampedArray2PoseArray(posestamped_array, pose_array):
         pose_array.poses.append(posestramped.pose)
     return pose_array
 
+def VOPoseArray2MapPoseArray(vo_pose_array, map_pose_array):
+    init_pose = Pose()
+    init_pose.orientation.x = 0.7071
+    init_pose.orientation.w = 0.7071
+    for pose in vo_pose_array.poses:
+        map_pose_array.poses.append(posemath.toMsg( posemath.fromMsg( init_pose ) *  posemath.fromMsg( pose ) ))
+    return map_pose_array
+
 
 def Globalarray2Relarray(global_array, rel_array):
     prev_pose = Pose()
@@ -236,7 +244,8 @@ def appendTrans2PoseStampedArray(trans, pose_array):
     if not pose_array.poseArray:
         posetmp = PoseStamped()
         posetmp.header.frame_id = trans.child_frame_id
-        posetmp.pose.orientation.w = 1
+        # posetmp.pose.orientation.x = 0.7071
+        posetmp.pose.orientation.w = 1 #0.7071
         pose_array.poseArray.append(posetmp)
         
     match = (pose_array.poseArray[-1].header.frame_id == trans.child_frame_id)

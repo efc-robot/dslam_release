@@ -202,13 +202,13 @@ int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat
         {
             if (RansacStatus[i] == 0)
                 continue;
-            ushort d = depth_prev.ptr<unsigned short> (int ( RAN_KP1[i].y )) [ int ( RAN_KP1[i].x ) ];
+            ushort d = depth_curr.ptr<unsigned short> (int ( RAN_KP2[i].y )) [ int ( RAN_KP2[i].x ) ];
             if ( d == 0 )   // bad depth
                 continue;
             float dd = d/1000.0;
-            Point2d p1 = pixel2cam ( RAN_KP1[i], K );
+            Point2d p1 = pixel2cam ( RAN_KP2[i], K );
             points_3d.push_back ( Point3f ( p1.x*dd, p1.y*dd, dd ) );
-            points_2d.push_back ( RAN_KP2[i] );
+            points_2d.push_back ( RAN_KP1[i] );
 
             line(img_2, RAN_KP1[i], RAN_KP2[i], Scalar(0, 0, 255));
             circle(img_2, RAN_KP2[i], 4, cv::Scalar(0, 0, 255));
