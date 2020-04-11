@@ -23,9 +23,10 @@
     cd  src
     ```
 
-- 下载代码
+- 下载代码，同时下载octomap_server包
     ```Shell
     git clone https://github.com/efc-robot/dslam_release.git
+    git clone https://github.com/xxzzll11111/octomap_server.git
     cd dslam_release
     ```
 
