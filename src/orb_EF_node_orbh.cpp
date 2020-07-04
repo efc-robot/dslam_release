@@ -26,13 +26,13 @@ string g_window_name;
 // SuperPoint superpoint;
 ros::Publisher pub;
 sensor_msgs::CameraInfo camera_info;
-int frame_id = 0;
-#ifndef NMS_Threshold
-#define NMS_Threshold 4
-#endif
-#ifndef KEEP_K_POINTS
-#define KEEP_K_POINTS 300
-#endif
+int seq = 0;
+// #ifndef NMS_Threshold
+// #define NMS_Threshold 4
+// #endif
+// #ifndef KEEP_K_POINTS
+// #define KEEP_K_POINTS 300
+// #endif
 
 void info_Callback(const sensor_msgs::CameraInfo::ConstPtr &msg)
 {  
@@ -50,37 +50,38 @@ void KeyPoint_cv2ros(cv::KeyPoint cv_kp, dslam_sp::KeyPoint& ros_kp)
     ros_kp.size = cv_kp.size;
 }
 
-//局部极大值抑制，这里利用fast特征点的响应值做比较
-void selectMax(int r, std::vector<KeyPoint> & kp){
+// //局部极大值抑制，这里利用fast特征点的响应值做比较
+// void selectMax(int r, std::vector<KeyPoint> & kp){
 
-    //r是局部极大值抑制的窗口半径
-    if (r != 0){
-        //对kp中的点进行局部极大值筛选
-        for (int i = 0; i < kp.size(); i++){
-            for (int j = i + 1; j < kp.size(); j++){
-                //如果两个点的距离小于半径r，则删除其中响应值较小的点
-                if (abs(kp[i].pt.x - kp[j].pt.x)<=r && abs(kp[i].pt.y - kp[j].pt.y)<=r){
-                    if (kp[i].response < kp[j].response){
-                        std::vector<KeyPoint>::iterator it = kp.begin() + i;
-                        kp.erase(it);
-                        i--;
-                        break;
-                    }
-                    else{
-                        std::vector<KeyPoint>::iterator it = kp.begin() + j;
-                        kp.erase(it);
-                        j--;
-                    }
-                }
-            }
-        }
-    }
+//     //r是局部极大值抑制的窗口半径
+//     if (r != 0){
+//         //对kp中的点进行局部极大值筛选
+//         for (int i = 0; i < kp.size(); i++){
+//             for (int j = i + 1; j < kp.size(); j++){
+//                 //如果两个点的距离小于半径r，则删除其中响应值较小的点
+//                 if (abs(kp[i].pt.x - kp[j].pt.x)<=r && abs(kp[i].pt.y - kp[j].pt.y)<=r){
+//                     if (kp[i].response < kp[j].response){
+//                         std::vector<KeyPoint>::iterator it = kp.begin() + i;
+//                         kp.erase(it);
+//                         i--;
+//                         break;
+//                     }
+//                     else{
+//                         std::vector<KeyPoint>::iterator it = kp.begin() + j;
+//                         kp.erase(it);
+//                         j--;
+//                     }
+//                 }
+//             }
+//         }
+//     }
 
-}
+// }
 
 
 void img_Callback(const dslam_sp::image_depth::ConstPtr &msg, Ptr<FeatureDetector> &detector, Ptr<DescriptorExtractor> &descriptor)
 {  
+    cout << "msg->header.seq:" << msg->header.seq << " frame_id:" << msg->header.frame_id << "  stamp:" << msg->header.stamp.sec << " . " << msg->header.stamp.nsec << endl;
     // Convert to OpenCV native BGR color
     // std::chrono::steady_clock::time_point//timepoint[5];
     // int timeindex = 0;
@@ -111,11 +112,13 @@ void img_Callback(const dslam_sp::image_depth::ConstPtr &msg, Ptr<FeatureDetecto
     ORB_FeatureExtract_ROS(image_raw, depth_raw, camera_info, dsize, kpts, descriptor_results, detector, descriptor, camera_info_tmp,depth_resized,image_resized);
     
     dslam_sp::EF_output feature_msg;
-    feature_msg.header = msg->image.header;
-    // feature_msg.header.frame_id = std::to_string(frame_id++);
-    feature_msg.header.frame_id = msg->header.frame_id;
+    feature_msg.header = msg->header;
+    // feature_msg.header.seq = std::to_string(seq++);
+    // feature_msg.header.seq = msg->header.seq;
+    // feature_msg.header.stamp.sec = msg->header.stamp.sec;
+    // feature_msg.header.stamp.nsec = msg->header.stamp.nsec;
     feature_msg.P = camera_info_tmp.P;
-    cout << "feature_msg.header.frame_id:" << feature_msg.header.frame_id << endl;
+    cout << "feature_msg.header.seq:" << feature_msg.header.seq << " stamp:" << feature_msg.header.stamp.sec << " . " << feature_msg.header.stamp.nsec << endl;
     
     sensor_msgs::ImagePtr dp_ptr = cv_bridge::CvImage(std_msgs::Header(), msg->depth.encoding, depth_resized).toImageMsg();
     feature_msg.depth = *dp_ptr;
@@ -176,7 +179,7 @@ int main(int argc, char **argv)
   
   pub = n.advertise<dslam_sp::EF_output>("/orb_EF/featurepoints_descriptors", 1); //创建publisher，往"featurepoints_descriptors"话题上发布消息
   
-  namedWindow( g_window_name, WINDOW_AUTOSIZE );// Create a window for display.
+//   namedWindow( g_window_name, WINDOW_AUTOSIZE );// Create a window for display.
   
   ros::Subscriber sub_info = n.subscribe("/mynteye/left_rect/camera_info", 1, info_Callback);
   ros::Subscriber sub = n.subscribe<dslam_sp::image_depth>(topic, 1, boost::bind(&img_Callback,_1, detector, descriptor) );  //设置回调函数gpsCallback

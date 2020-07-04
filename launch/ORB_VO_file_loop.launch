@@ -44,13 +44,38 @@
     <remap from="loopframe" to="/robot1/loopframe" />
   </node>
 
-  <node name="loop_frames" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
+  <node name="loop_frames" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="log">
   <remap from="loopframes" to="/robot1/loopframe" />
   <remap from="VO_loop_relpose" to="/looppose" />
   </node>
 
-  <node name="map_octomap" pkg="dslam_sp" required="true" type="rgbd2octomap_ros" output="screen">
-    <remap from="data" to="/pose_with_image" />
+  <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
+    <remap from="/pose_with_image" to="/pose_with_image" />
+  </node>
+
+  <!-- <node name="tf_listerner" pkg="dslam_sp" required="true" type="py_tf_listerner.py" output="screen"/> -->
+
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen">
+
+    <!-- resolution in meters per pixel -->
+    <param name="resolution" value="0.25" />
+
+    <!-- name of the fixed frame, needs to be "/map" for SLAM -->
+    <param name="frame_id" type="string" value="/map0" />
+
+    <!-- max range / depth resolution of the kinect in meter -->
+    <param name="sensor_model/max_range" value="100.0" />
+    <param name="latch" value="true" />
+
+    <!-- <param name="filter_ground" value="true" /> -->
+
+    <!-- max/min height for occupancy map, should be in meters -->
+    <param name="pointcloud_max_z" value="1000" />
+    <param name="pointcloud_min_z" value="-1000" />
+
+    <!-- topic from where pointcloud2 messages are subscribed -->
+    <remap from="/cloud_in" to="/pointcloud_part_local" />
+ 
   </node>
   
 <node name="rviz" pkg="rviz" required="true" type="rviz" output="screen"/>

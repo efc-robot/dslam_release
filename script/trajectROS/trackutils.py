@@ -237,6 +237,7 @@ def appendTrans2TransArray(trans, trans_array, withassert = True):
     elif not withassert:
         trans_array.transformArray.append(trans)
     else:
+        print("match id1:{} ; id2:{}".format(trans_array.transformArray[-1].header.frame_id,trans.child_frame_id) )
         assert(trans_array.transformArray[-1].header.frame_id == trans.child_frame_id)
         trans_array.transformArray.append(trans)
 

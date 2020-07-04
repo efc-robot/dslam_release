@@ -184,7 +184,7 @@ void fnames_Callback(const dslam_sp::MatchedFrame::ConstPtr &msg, Ptr<FeatureDet
 
     Eigen::Quaterniond q;
     Mat t;
-    int matchpointNum = ORB_Match_VO(points_prev,points_curr, desc_prev, desc_curr, depth_prev, desc_curr, camera_info_tmp.P, q, t);
+    int matchpointNum = ORB_Match_VO(points_prev,points_curr, desc_prev, desc_curr, depth_prev, depth_curr, camera_info_tmp.P, q, t);
     cout << "OKO5" << endl;
 
 

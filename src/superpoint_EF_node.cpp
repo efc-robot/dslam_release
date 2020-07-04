@@ -26,7 +26,7 @@ string g_window_name;
 // SuperPoint superpoint;
 ros::Publisher pub;
 sensor_msgs::CameraInfo camera_info;
-int frame_id = 0;
+int seq = 0;
 
 char ProFileDir[200] = "/PATH/TO/PROTOTXT/";
 char ModelFileDir[200] = "/PATH/TO/CAFFEMODEL/";
@@ -108,11 +108,11 @@ void img_Callback(const dslam_sp::image_depth::ConstPtr &msg, SuperPoint &superp
    //timepoint[timeindex++] = std::chrono::steady_clock::now();
     
     dslam_sp::EF_output feature_msg;
-    feature_msg.header = msg->image.header;
-    // feature_msg.header.frame_id = std::to_string(frame_id++);
-    feature_msg.header.frame_id = msg->header.frame_id;
+    feature_msg.header = msg->header;
+    // feature_msg.header.seq = std::to_string(seq++);
+    feature_msg.header.seq = msg->header.seq;
     feature_msg.P = camera_info_tmp.P;
-    cout << "feature_msg.header.frame_id:" << feature_msg.header.frame_id << endl;
+    cout << "feature_msg.header.seq:" << feature_msg.header.seq << endl;
     
     sensor_msgs::ImagePtr dp_ptr = cv_bridge::CvImage(std_msgs::Header(), msg->depth.encoding, depth).toImageMsg();
     feature_msg.depth = *dp_ptr;

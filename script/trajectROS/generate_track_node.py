@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 import os
 import rospy
+import tf
 from tf_conversions import posemath
 from dslam_sp.msg import TransformStampedArray, PoseStampedArray, TransformStamped_with_image, Pose_with_image
 import tf2_ros
@@ -22,9 +23,10 @@ poseStampedArray = PoseStampedArray()
 posearray_pub = None
 pose_with_image_pub = None
 poseStampedArraylock = threading.Lock()
+br = tf.TransformBroadcaster()
 
 def callback(data):
-    global posearray_pub, pose_with_image_pub, transArray, poseStampedArray, poseStampedArraylock
+    global posearray_pub, pose_with_image_pub, transArray, poseStampedArray, poseStampedArraylock,br
     print(data.TF)
     poseStampedArraylock.acquire()
     trackutils.appendTrans2PoseStampedArray(data.TF, poseStampedArray)
@@ -33,22 +35,38 @@ def callback(data):
 
     vo_posearray = PoseArray()
     map_posearray = PoseArray()
-    map_posearray.header.frame_id = "map"
+    map_posearray.header.frame_id = "map0"
 
     trackutils.StampedArray2PoseArray(poseStampedArray, vo_posearray)
     trackutils.VOPoseArray2MapPoseArray(vo_posearray, map_posearray)
     
     posearray_pub.publish(map_posearray)
 
-    # init_pose = Pose()
-    # init_pose.orientation.x = 0.7071
-    # init_pose.orientation.w = 0.7071
     pose_with_image = Pose_with_image()
+    pose_with_image.header.stamp = data.TF.header.stamp
+    pose_with_image.header.frame_id = "/odom"
     pose_with_image.pose = map_posearray.poses[-1]
     pose_with_image.image = data.image
     pose_with_image.depth = data.depth
     pose_with_image.P = data.P
     pose_with_image_pub.publish(pose_with_image)
+
+    tf_msg = TransformStamped()
+    tf_msg.header.seq = data.TF.header.seq
+    tf_msg.header.stamp = data.TF.header.stamp
+    tf_msg.header.frame_id = "/map0"
+    tf_msg.child_frame_id = "/odom"
+    tf_msg.transform.translation = map_posearray.poses[-1].position
+    tf_msg.transform.rotation = map_posearray.poses[-1].orientation
+    print(tf_msg)
+    br.sendTransformMessage(tf_msg)
+
+    # tf_msg.header.frame_id = "base_footprint"
+    # tf_msg.child_frame_id = "odom"
+    # tf_msg.transform.translation = vo_posearray.poses[-1].position
+    # tf_msg.transform.rotation = vo_posearray.poses[-1].orientation
+    # print(tf_msg)
+    # br.sendTransformMessage(tf_msg)
 
 BackendRunning = False
 NewLoop = False
@@ -101,7 +119,7 @@ def BackendOpt(transArray,poseStampedArray,LooptransArray,posearray_pub):
     trackutils.gtsamOpt2PoseStampedarray("./tem12.g2o",poseStampedArray)
 
     posearray = PoseArray()
-    posearray.header.frame_id = "map"
+    posearray.header.frame_id = "map0"
     # trackutils.StampedArray2PoseArray(poseStampedArray, posearray)
     # posearray_pub.publish(posearray)
 

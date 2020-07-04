@@ -194,13 +194,16 @@ include
 add_executable(merge_img_depth src/merge_img_depth_node.cpp)
 # add_executable(publish_sim src/publish_sim_node.cpp)
 add_executable(publish_merge src/publish_merge_node.cpp)
+add_executable(publish_merge_tum src/publish_merge_node_tum.cpp)
 ##SP## add_executable(vo_loop_fnames src/VO_loop_filenames.cpp)
 add_executable(vo_loop_fnames_orb src/VO_loop_filenames_orb_orbh.cpp)
 add_executable(vo_loop_frames_orb src/VO_loop_frames_orb_orbh.cpp)
 ##SP## add_executable(superpoint_EF src/superpoint_EF_node.cpp)
 add_executable(orb_EF src/orb_EF_node_orbh.cpp)
+add_executable(sift_EF src/sift_EF_node.cpp)
 ##SP## add_executable(visual_odometry src/visual_odometry_node.cpp)
 add_executable(visual_odometry_orb src/visual_odometry_orb_node_orbh.cpp)
+add_executable(visual_odometry_sift src/visual_odometry_sift_node.cpp)
 add_executable(generate_track src/generate_track_node.cpp)
 add_executable(rgbd2octomap_ros src/rgbd2octomap_ros.cpp)
 
@@ -216,12 +219,15 @@ add_dependencies(merge_img_depth ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 # add_dependencies(publish_sim ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(superpoint_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(orb_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(sift_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(publish_merge ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(publish_merge_tum ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(vo_loop_fnames ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(vo_loop_fnames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(vo_loop_frames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(visual_odometry ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visual_odometry_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(visual_odometry_sift ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(generate_track ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rgbd2octomap_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -230,6 +236,10 @@ target_link_libraries(merge_img_depth
   ${catkin_LIBRARIES}
 )
 target_link_libraries(publish_merge
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+target_link_libraries(publish_merge_tum
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
@@ -259,6 +269,17 @@ target_link_libraries(orb_EF
   ${G2O_LIBS}
 )
 target_link_libraries(visual_odometry_orb
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${G2O_LIBS}
+)
+target_link_libraries(sift_EF
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${GLOG_BOOST_LIBS}
+  ${G2O_LIBS}
+)
+target_link_libraries(visual_odometry_sift
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${G2O_LIBS}

@@ -43,6 +43,7 @@ octomap::ColorOcTree tree( 0.25 ); //全局map
 octomap::Pointcloud cloud_octo;
 octomap_server::OctomapServer* server;
 ros::Publisher pub;
+ofstream myfile;
 
 void Callback(const dslam_sp::Pose_with_image::ConstPtr &msg)
 {
@@ -52,6 +53,9 @@ void Callback(const dslam_sp::Pose_with_image::ConstPtr &msg)
     pose(0,3) = msg->pose.position.x; 
     pose(1,3) = msg->pose.position.y; 
     pose(2,3) = msg->pose.position.z;
+    myfile << msg->header.stamp.sec << "." << msg->header.stamp.nsec << " " ;
+    myfile << msg->pose.position.x << " " << msg->pose.position.y << " " << msg->pose.position.z << " ";
+    myfile << msg->pose.orientation.x << " " << msg->pose.orientation.y << " " << msg->pose.orientation.z << " " << msg->pose.orientation.w << endl;
 
     cv_bridge::CvImageConstPtr cv_ptr1, cv_ptr2;
     sensor_msgs::ImagePtr img_ptr = boost::make_shared<::sensor_msgs::Image>(msg->image);
@@ -152,8 +156,15 @@ int main( int argc, char** argv )
     if (ros::names::remap("data") == "data") {
         ROS_WARN("rgbd2octomap Topic 'data' has not been remapped! ");
     }
+    if (ros::names::remap("trajectory_dir") == "trajectory_dir") {
+        ROS_WARN("rgbd2octomap trajectory_dir has not been remapped! ");
+    }
 
     std::string topic = nh.resolveName("data");
+    std::string trajectory_dir = nh.resolveName("trajectory_dir");
+
+    myfile.open (trajectory_dir);
+    myfile << "# timestamp tx ty tz qx qy qz qw" << endl;
 
     server = new octomap_server::OctomapServer(private_nh, nh);
     server->m_octree = &tree;

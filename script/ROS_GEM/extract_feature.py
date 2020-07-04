@@ -5,7 +5,7 @@ import torchvision
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 import torchvision.models as models
-
+import time
 import numpy as np
 from PIL import Image
 import os
@@ -14,7 +14,7 @@ def main():
     
     # load model
     net = ImageRetrievalNet()
-    state = torch.load('//home/yujc/robotws/DSLAM_release/src/ros_dslam_new/script/ROS_GEM//weights/gem.pth')
+    state = torch.load('/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth')
     net.load_state_dict(state['state_dict'], strict=False)
     
     # image preprocess
@@ -29,15 +29,17 @@ def main():
     ])
     
     # list of image names
-    images = ['/home/yujc/robotws/dataset/image_503_loop/left_7.png']
-    qimages = ['/home/yujc/robotws/dataset/image_503_loop/left_2665.png']
+    images = ['/home/xuzhl/dataset/image_503_loop/pic/left_7.png']
+    qimages = ['/home/xuzhl/dataset/image_503_loop/pic/left_2665.png']
     
     # extract features
-    vecs = extract_vectors(net, images, transform)
-    qvecs = extract_vectors(net, qimages, transform)
-    
-    # match result
-    best_match = match(vecs, qvecs)
+    while(True):
+        vecs = extract_vectors(net, images, transform)
+        qvecs = extract_vectors(net, qimages, transform)
+        
+        # match result
+        best_match = match(vecs, qvecs)
+        time.sleep(0.1)
     print(best_match)
     
 def match(vecs, qvecs, threshold=0.95):

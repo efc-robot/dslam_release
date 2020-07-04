@@ -147,6 +147,7 @@ void feature_Callback(const dslam_sp::EF_output::ConstPtr &msg)
         
         geometry_msgs::TransformStamped TF_msg;
         TF_msg.header = msg->header;
+        TF_msg.header.frame_id = std::to_string(msg->header.seq);
         TF_msg.child_frame_id = header_prev.frame_id;
         TF_msg.transform.translation.x = t.at<double>(0);
         TF_msg.transform.translation.y = t.at<double>(1);
@@ -167,6 +168,7 @@ void feature_Callback(const dslam_sp::EF_output::ConstPtr &msg)
     desc_prev = desc_curr;
     depth_prev = depth_curr;
     header_prev = msg->header;
+    header_prev.frame_id = std::to_string(msg->header.seq);
     
     First_Frame = false;
 }

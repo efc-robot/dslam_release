@@ -6,8 +6,9 @@ import numpy as np
 from PIL import Image
 import os
 import rospy
+import tf
 from tf_conversions import posemath
-from dslam_sp.msg import TransformStampedArray, PoseStampedArray
+from dslam_sp.msg import TransformStampedArray, PoseStampedArray, TransformStamped_with_image, Pose_with_image
 from dslam_sp.srv import *
 import tf2_ros
 from geometry_msgs.msg import TransformStamped, PoseStamped, Pose, PoseArray
@@ -35,6 +36,8 @@ poseStampedArray_locks = {}
 
 posearray_pub = None
 posearray_pub_test = None
+pose_with_image_pub = None
+br = tf.TransformBroadcaster()
 
 BackendRunning = False
 NewLoop = False
@@ -51,26 +54,48 @@ def self_track_pose_cb(data):
     #child_frame_id表示先来的图片,或者是对方的图片。header.frame_id 表示后来的图片,或者自己的图片
 
 def process_self():
-    global self_ID, self_transArray, poseStampedArray_sets, poseStampedArray_locks, posearray_pub, self_trans_queue
+    global self_ID, self_transArray, poseStampedArray_sets, poseStampedArray_locks, posearray_pub, self_trans_queue, pose_with_image_pub
     while(True):
         time.sleep(0.1)
         if self_trans_queue.empty():
             continue
         data = self_trans_queue.get()
-        if( int(int(data.child_frame_id)/1e8 ) == int(int(data.header.frame_id)/1e8) ): #如果是自己的位姿
-            current_robot_id = int(int(data.child_frame_id)/1e8)
-            assert (current_robot_id == self_ID) #验证确实是自己的位姿
+        if( int(int(data.TF.child_frame_id)/1e8 ) == int(int(data.TF.header.frame_id)/1e8) ): #如果是自己的位姿
+            current_robot_id = int(int(data.TF.child_frame_id)/1e8)
+            print(data.TF)
+            assert (current_robot_id == self_ID), str(data.TF) + " current_robot_id: " + str(current_robot_id) + " self_ID: " + str(self_ID)#验证确实是自己的位姿
             poseStampedArray_locks[ str(current_robot_id ) ].acquire()
-            trackutils.appendTrans2PoseStampedArray(data, poseStampedArray_sets[ str(current_robot_id ) ] )
-            trackutils.appendTrans2TransArray(data, tranStampedArray_sets[ str(self_ID)] )    
+            trackutils.appendTrans2PoseStampedArray(data.TF, poseStampedArray_sets[ str(current_robot_id ) ] )
+            trackutils.appendTrans2TransArray(data.TF, tranStampedArray_sets[ str(self_ID)] )    
             poseStampedArray_locks[ str(current_robot_id) ].release()
-            posearray = PoseArray()
-            posearray.header.frame_id = "map"
+            vo_posearray = PoseArray()
+            map_posearray = PoseArray()
+            map_posearray.header.frame_id = "map{}".format(self_ID)
 
             poseStampedArray_locks[ str(current_robot_id ) ].acquire()
-            trackutils.StampedArray2PoseArray(poseStampedArray_sets[ str(current_robot_id ) ], posearray)
-            posearray_pub.publish(posearray)
+            trackutils.StampedArray2PoseArray(poseStampedArray_sets[ str(current_robot_id ) ], vo_posearray)
             poseStampedArray_locks[ str(current_robot_id ) ].release()
+            trackutils.VOPoseArray2MapPoseArray(vo_posearray, map_posearray)
+            posearray_pub.publish(map_posearray)
+
+            pose_with_image = Pose_with_image()
+            pose_with_image.header.stamp = data.TF.header.stamp
+            pose_with_image.header.frame_id = "/odom{}".format(self_ID)
+            pose_with_image.pose = map_posearray.poses[-1]
+            pose_with_image.image = data.image
+            pose_with_image.depth = data.depth
+            pose_with_image.P = data.P
+            pose_with_image_pub.publish(pose_with_image)
+
+            tf_msg = TransformStamped()
+            tf_msg.header.stamp = data.TF.header.stamp
+            tf_msg.header.frame_id = "/map{}".format(self_ID)
+            tf_msg.child_frame_id = "/odom{}".format(self_ID)
+            tf_msg.transform.translation = map_posearray.poses[-1].position
+            tf_msg.transform.rotation = map_posearray.poses[-1].orientation
+            print(tf_msg)
+            br.sendTransformMessage(tf_msg)
+            
     
 
 
@@ -202,7 +227,7 @@ def BackendOpt():
         poseStampedArray_sets[key] = poseStampedArray_sets_result[key]
     
     posearray = PoseArray()
-    posearray.header.frame_id = "map"
+    posearray.header.frame_id = "map{}".format(self_ID)
     # poseStampedArray_locks[str(3-self_ID)].acquire()
     trackutils.StampedArray2PoseArray(poseStampedArray_sets[str(3-self_ID)], posearray)
     posearray_pub_test.publish(posearray)
@@ -285,7 +310,7 @@ def intertranscallback(msg):
 
 
 def main(argv):
-    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test
+    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub
     opts, args = getopt.getopt(argv,"i:")
     for opt, arg in opts:
         if opt in ("-i"):
@@ -301,7 +326,7 @@ def main(argv):
     signal.signal(signal.SIGINT, trackutils.quit)                                
     signal.signal(signal.SIGTERM, trackutils.quit)
     rospy.init_node('generate_track_py', anonymous=True)
-    rospy.Subscriber("relpose", TransformStamped, self_track_pose_cb,queue_size=100)
+    rospy.Subscriber("relpose", TransformStamped_with_image, self_track_pose_cb,queue_size=100)
     srvhandle = rospy.Service('/robot{}/posearray_srv'.format(self_ID), posearray_srv, handle_posearray_srv)
     srvhandle = rospy.Service('/robot{}/transarray_srv'.format(self_ID), transarray_srv, handle_transarray_srv)
     rospy.Subscriber("looppose", TransformStamped, callback_loop)
@@ -309,6 +334,7 @@ def main(argv):
     rospy.Subscriber("/robot{}/loopintertrans".format(self_ID), TransformStampedArray, intertranscallback )
     posearray_pub = rospy.Publisher("posearray",PoseArray, queue_size=3)
     posearray_pub_test = rospy.Publisher("/robot{}/posearray_test".format(self_ID),PoseArray, queue_size=3)
+    pose_with_image_pub = rospy.Publisher("pose_with_image",Pose_with_image, queue_size=3)
     backt = threading.Thread(target=BackendThread)
     self_tran_t = threading.Thread(target=process_self)
     backt.setDaemon(True)

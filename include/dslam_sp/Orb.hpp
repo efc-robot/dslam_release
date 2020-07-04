@@ -55,6 +55,7 @@ using namespace std;
 #define KEEP_K_POINTS 1000
 #define MATCHER "BF"
 #define NN_thresh 0.7
+#define NMS_Threshold 4
 
 
 // #define KEEP_K_POINTS 1000
@@ -71,6 +72,33 @@ Point2d pixel2cam ( const Point2d& p, const Mat& K )
            );
 }
 
+//局部极大值抑制，这里利用fast特征点的响应值做比较
+void selectMax(int r, std::vector<KeyPoint> & kp){
+
+    //r是局部极大值抑制的窗口半径
+    if (r != 0){
+        //对kp中的点进行局部极大值筛选
+        for (int i = 0; i < kp.size(); i++){
+            for (int j = i + 1; j < kp.size(); j++){
+                //如果两个点的距离小于半径r，则删除其中响应值较小的点
+                if (abs(kp[i].pt.x - kp[j].pt.x)<=r && abs(kp[i].pt.y - kp[j].pt.y)<=r){
+                    if (kp[i].response < kp[j].response){
+                        std::vector<KeyPoint>::iterator it = kp.begin() + i;
+                        kp.erase(it);
+                        i--;
+                        break;
+                    }
+                    else{
+                        std::vector<KeyPoint>::iterator it = kp.begin() + j;
+                        kp.erase(it);
+                        j--;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,const  sensor_msgs::CameraInfo camera_info, Size dsize, std::vector<cv::KeyPoint>& keypoints, Mat& descriptor_results, Ptr<FeatureDetector> &detector, Ptr<DescriptorExtractor> &descriptor, sensor_msgs::CameraInfo& camera_info_tmp, Mat& depth_resized, Mat& image_resized);
 
 int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat& desc_prev, Mat& desc_curr, Mat& depth_prev, Mat& depth_curr, boost::array<double,12> camera_infoP,  Eigen::Quaterniond& q, Mat& t);
@@ -78,16 +106,16 @@ int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat
 
 void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,const  sensor_msgs::CameraInfo camera_info, Size dsize, std::vector<cv::KeyPoint>& keypoints, Mat& descriptor_results, Ptr<FeatureDetector> &detector, Ptr<DescriptorExtractor> &descriptor, sensor_msgs::CameraInfo& camera_info_tmp, Mat& depth_resized, Mat& image_resized){
         //裁剪到dsize
-    cout << "orbfile 001" << endl;
+    // cout << "orbfile 001" << endl;
     Mat& image = image_resized;
     Mat& depth = depth_resized;
     int image_raw_height = image_raw.rows;
     int image_raw_width = image_raw.cols;
     camera_info_tmp = camera_info;
-    cout << "orbfile 002" << endl;
-    cout << "image_raw_height: " << image_raw_height << "  image_raw_width: " << image_raw_width << endl;
+    // cout << "orbfile 002" << endl;
+    // cout << "image_raw_height: " << image_raw_height << "  image_raw_width: " << image_raw_width << endl;
     if((float)image_raw_height/image_raw_width > 0.75) {
-        cout << "orbfile 0021" << endl;
+        // cout << "orbfile 0021" << endl;
         int height_ = image_raw_width /4 *3;
         int margin = (image_raw_height - height_)/2;
         image = image_raw(Rect(0,margin,image_raw_width,height_));
@@ -95,7 +123,7 @@ void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,c
         camera_info_tmp.P[6] = camera_info_tmp.P[6] - margin;
     }
     else if(image_raw_height/image_raw_width < 0.75) {
-        cout << "orbfile 0022" << endl;
+        // cout << "orbfile 0022" << endl;
         int width_ = image_raw_height /3 *4;
         int margin = (image_raw_width - width_)/2;
         image = image_raw(Rect(margin,0,width_,image_raw_height));
@@ -103,7 +131,7 @@ void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,c
         camera_info_tmp.P[2] = camera_info_tmp.P[2] - margin;
         // cout <<  "width_" << width_ << "  margin" << margin << endl;
     }
-    cout << "orbfile 003" << endl;
+    // cout << "orbfile 003" << endl;
     if(image.size() != dsize){
         resize(image, image, dsize);
         resize(depth, depth, dsize);
@@ -112,28 +140,28 @@ void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,c
     }   
 
     detector->detect ( image,keypoints );
-    cout << "orbfile 004" << endl;
+    // cout << "orbfile 004" << endl;
     //NMS
     // selectMax(NMS_Threshold, keypoints);
-    cout << "keypoints size:" << keypoints.size() << endl;
+    // cout << "keypoints size:" << keypoints.size() << endl;
     
-    // for(int i=0; i<min( KEEP_K_POINTS, int(keypoints.size()-1) ); i++) {
-    //     for(int j=keypoints.size()-1; j>i; j--) {
-    //         if(keypoints[j].response > keypoints[j-1].response) {
-    //             swap(keypoints[j], keypoints[j-1]);
-    //         }
-    //     }
-    // }
-    // if(keypoints.size()>KEEP_K_POINTS) keypoints.resize(KEEP_K_POINTS, KeyPoint());
+    for(int i=0; i<min( KEEP_K_POINTS, int(keypoints.size()-1) ); i++) {
+        for(int j=keypoints.size()-1; j>i; j--) {
+            if(keypoints[j].response > keypoints[j-1].response) {
+                swap(keypoints[j], keypoints[j-1]);
+            }
+        }
+    }
+    if(keypoints.size()>KEEP_K_POINTS) keypoints.resize(KEEP_K_POINTS, KeyPoint());
 
     //-- 第二步:根据角点位置计算 BRIEF 描述子
     descriptor->compute ( image, keypoints, descriptor_results );
-    cout << "orbfile 005" << endl;
+    // cout << "orbfile 005" << endl;
 
     cout << "descriptor_results: "<< descriptor_results.size() << endl;
-    cout << "cols: "<< descriptor_results.cols << endl;
-    cout << "rows: "<< descriptor_results.rows << endl;
-    cout << "type: "<< descriptor_results.type() << endl;
+    // cout << "cols: "<< descriptor_results.cols << endl;
+    // cout << "rows: "<< descriptor_results.rows << endl;
+    // cout << "type: "<< descriptor_results.type() << endl;
 
     
 
@@ -146,9 +174,9 @@ int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat
         if( MATCHER == "BF" ) {
 
             Ptr<DescriptorMatcher> matcher  = DescriptorMatcher::create ( "BruteForce-Hamming" );
-            cout << "BF1" << endl;
+            // cout << "BF1" << endl;
             matcher->match ( desc_prev, desc_curr, matches );
-            cout << "BF2" << endl;
+            // cout << "BF2" << endl;
             // BFMatcher matcher(NORM_L2, true);
             // matcher.match(desc_prev, desc_curr, matches);
         }
@@ -168,8 +196,8 @@ int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat
             if ( dist > max_dist ) max_dist = dist;
         }
 
-        printf ( "-- Max dist : %f \n", max_dist );
-        printf ( "-- Min dist : %f \n", min_dist );
+        // printf ( "-- Max dist : %f \n", max_dist );
+        // printf ( "-- Min dist : %f \n", min_dist );
 
 
 
