@@ -133,6 +133,19 @@ def BackendThread():
             NewLoop = False
             BackendOpt()
             BackendRunning = False
+
+            if (self_ID != 1) :
+                tf_msg = TransformStamped()
+                tf_msg.header.stamp = poseStampedArray_sets[str(self_ID)].poseArray[-1].header.stamp
+                tf_msg.header.frame_id = "/map1"
+                tf_msg.child_frame_id = "/map{}".format(self_ID)
+                pose_map1 = posemath.fromMsg( poseStampedArray_sets[str(1)].poseArray[0].pose )
+                pose_mapself = posemath.fromMsg( poseStampedArray_sets[str(self_ID)].poseArray[0].pose )
+                tf_map1_to_self = pose_map1.Inverse() * pose_mapself
+                tf_msg.transform.translation = posemath.toMsg(tf_map1_to_self).position
+                tf_msg.transform.rotation = posemath.toMsg(tf_map1_to_self).orientation
+                print(tf_msg)
+                br.sendTransformMessage(tf_msg)
     
 
 def BackendOpt():
