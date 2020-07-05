@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-<arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
-<arg name="datasetpath" value="/home/xuzhl/dataset/image_503_loop/pic/" />
+<!-- <arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" /> -->
+<!-- <arg name="datasetpath" value="/home/xuzhl/dataset/image_503_loop/pic/" /> -->
+
+<arg name="gemweightspath" value="/home/yujc/robotws/DSLAM_one/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth" />
+<arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" />
 <arg name="robotid1" value="1" />
 <arg name="framestart1" value="1" />
 <arg name="frameend1" value="1700" />

@@ -6,7 +6,8 @@ add_compile_options(-std=c++11)
 
 SET(CPU_ARCH x86_64)
 ##SP## SET(CAFFE_DIR /home/yujc/robotws/caffe-ssd/) #选择caffe路径
-SET(G2O_CMAKE_MODULES /home/xuzhl/git_workspace/g2o/cmake_modules/)
+## SET(G2O_CMAKE_MODULES /home/xuzhl/git_workspace/g2o/cmake_modules/)
+SET(G2O_CMAKE_MODULES /home/yujc/robotws/g2o/cmake_modules/)
 ##SP## SET(SUPERPOINT_LIB ${PROJECT_SOURCE_DIR}/superpointlib/lib/libsuperpoint.so)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -194,18 +195,18 @@ include
 add_executable(merge_img_depth src/merge_img_depth_node.cpp)
 # add_executable(publish_sim src/publish_sim_node.cpp)
 add_executable(publish_merge src/publish_merge_node.cpp)
-add_executable(publish_merge_tum src/publish_merge_node_tum.cpp)
+##TUM## add_executable(publish_merge_tum src/publish_merge_node_tum.cpp)
 ##SP## add_executable(vo_loop_fnames src/VO_loop_filenames.cpp)
 add_executable(vo_loop_fnames_orb src/VO_loop_filenames_orb_orbh.cpp)
 add_executable(vo_loop_frames_orb src/VO_loop_frames_orb_orbh.cpp)
 ##SP## add_executable(superpoint_EF src/superpoint_EF_node.cpp)
 add_executable(orb_EF src/orb_EF_node_orbh.cpp)
-add_executable(sift_EF src/sift_EF_node.cpp)
+##SIFT## add_executable(sift_EF src/sift_EF_node.cpp)
 ##SP## add_executable(visual_odometry src/visual_odometry_node.cpp)
 add_executable(visual_odometry_orb src/visual_odometry_orb_node_orbh.cpp)
-add_executable(visual_odometry_sift src/visual_odometry_sift_node.cpp)
+##SIFT## add_executable(visual_odometry_sift src/visual_odometry_sift_node.cpp)
 add_executable(generate_track src/generate_track_node.cpp)
-add_executable(rgbd2octomap_ros src/rgbd2octomap_ros.cpp)
+##RGBD## add_executable(rgbd2octomap_ros src/rgbd2octomap_ros.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -219,17 +220,17 @@ add_dependencies(merge_img_depth ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 # add_dependencies(publish_sim ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(superpoint_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(orb_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(sift_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+##SIFT## add_dependencies(sift_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(publish_merge ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(publish_merge_tum ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+##TUM## add_dependencies(publish_merge_tum ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(vo_loop_fnames ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(vo_loop_fnames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(vo_loop_frames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(visual_odometry ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visual_odometry_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(visual_odometry_sift ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+##SIFT## add_dependencies(visual_odometry_sift ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(generate_track ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(rgbd2octomap_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+##RGBD## add_dependencies(rgbd2octomap_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(merge_img_depth
@@ -239,10 +240,10 @@ target_link_libraries(publish_merge
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
-target_link_libraries(publish_merge_tum
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
+##TUM## target_link_libraries(publish_merge_tum
+##TUM##   ${catkin_LIBRARIES}
+##TUM##   ${OpenCV_LIBRARIES}
+##TUM## )
 # target_link_libraries(publish_sim
 #  ${catkin_LIBRARIES}
 #  ${OpenCV_LIBRARIES}
@@ -273,17 +274,17 @@ target_link_libraries(visual_odometry_orb
   ${OpenCV_LIBRARIES}
   ${G2O_LIBS}
 )
-target_link_libraries(sift_EF
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  ${GLOG_BOOST_LIBS}
-  ${G2O_LIBS}
-)
-target_link_libraries(visual_odometry_sift
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  ${G2O_LIBS}
-)
+##SIFT## target_link_libraries(sift_EF
+##SIFT##   ${catkin_LIBRARIES}
+##SIFT##   ${OpenCV_LIBRARIES}
+##SIFT##   ${GLOG_BOOST_LIBS}
+##SIFT##   ${G2O_LIBS}
+##SIFT## )
+##SIFT## target_link_libraries(visual_odometry_sift
+##SIFT##   ${catkin_LIBRARIES}
+##SIFT##   ${OpenCV_LIBRARIES}
+##SIFT##   ${G2O_LIBS}
+##SIFT## )
 ##SP## target_link_libraries(vo_loop_fnames
 ##SP##   ${catkin_LIBRARIES}
 ##SP##   ${OpenCV_LIBRARIES}
@@ -306,10 +307,10 @@ target_link_libraries(generate_track
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
-target_link_libraries(rgbd2octomap_ros
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
+##RGBD## target_link_libraries(rgbd2octomap_ros
+##RGBD##   ${catkin_LIBRARIES}
+##RGBD##   ${OpenCV_LIBRARIES}
+##RGBD## )
 
 
 ##SP## ADD_SUBDIRECTORY(superpointlib)
