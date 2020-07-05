@@ -169,7 +169,12 @@ def BackendOpt():
 
     g2ofilename = "/tmp/g2o_robot{}_test.g2o".format(self_ID)
     with open(g2ofilename, "w") as filetmp:
-        pass
+        # pass
+        print("show first_add_node_str")
+        first_add_node_str = "VERTEX_SE3:QUAT {pointID} {tx} {ty} {tz} {rx} {ry} {rz} {rw}".format(pointID=0,tx=0,ty=0,tz=0, rx = 0, ry = 0, rz = 0, rw = 1)
+        print (first_add_node_str)
+        print >> filetmp, first_add_node_str
+        print("shown first_add_node_str")
     #add pose 和 trans
     for key, looparray in LooptransArray_sets.items():
         if not (int(key) == self_ID):
@@ -199,6 +204,12 @@ def BackendOpt():
         else : #ID 相等是自己 key == self_ID
             tranStampedArray_locks[key].acquire()
             trackutils.PoseStampedarray2G2O(g2ofilename,poseStampedArray_sets[key], True )
+            with open(g2ofilename, "a") as g2ofile:
+                print("show cons_str")
+                cons_str = "EDGE_SE3:QUAT {id1} {id2} {tx} {ty} {tz} {rx} {ry} {rz} {rw}  {COVAR_STR}".format(id1=0,id2=poseStampedArray_sets[key].poseArray[0].header.frame_id, tx =0 , ty =0 , tz=0, rx =0, ry=0, rz =0, rw =1, COVAR_STR=trackutils.COVAR_STR)
+                print(cons_str)
+                print >> g2ofile, cons_str
+                print("shown cons_str")
             valid_loop_array = trackutils.valid_loop(poseStampedArray_sets, tranStampedArray_sets[key])
             trackutils.AddTransArray2G2O(g2ofilename, valid_loop_array)
 

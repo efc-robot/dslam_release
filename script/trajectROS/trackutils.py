@@ -449,6 +449,9 @@ def gtsamOpt2PoseStampedArraySet(inputfname, pose_array_set):
         posestampedtmp = PoseStamped()
         posestampedtmp.header.frame_id = str(keys.at(i) )
         current_robot_id = int(int(keys.at(i)) / 1e8)
+        if (current_robot_id == 0):
+            print("find current_robot_id == 0")
+            continue
         posestampedtmp.pose = posetmp
         if not (pose_array_set.has_key(str(current_robot_id))):
              pose_array_set[str(current_robot_id)] = PoseStampedArray()
