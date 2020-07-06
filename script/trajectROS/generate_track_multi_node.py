@@ -8,6 +8,7 @@ import os
 import rospy
 import tf
 from tf_conversions import posemath
+import PyKDL as kdl
 from dslam_sp.msg import TransformStampedArray, PoseStampedArray, TransformStamped_with_image, Pose_with_image
 from dslam_sp.srv import *
 import tf2_ros
@@ -124,7 +125,7 @@ def callback_loop(data):
     print(data)
 
 def BackendThread():
-    global posearray_pub, transArray, poseStampedArray_sets, poseStampedArray_locks, LooptransArray_sets, LooptransArray_locks,BackendRunning, NewLoop
+    global posearray_pub, transArray, poseStampedArray_sets, poseStampedArray_locks, LooptransArray_sets, LooptransArray_locks,BackendRunning, NewLoop, br
     while True:
         time.sleep(2)
         print("BackendOpt..........running")
@@ -134,16 +135,28 @@ def BackendThread():
             BackendOpt()
             BackendRunning = False
 
-            if (self_ID != 1) :
+            if (self_ID != 1) and poseStampedArray_sets.has_key(str(1)) :
+                print("start")
                 tf_msg = TransformStamped()
-                tf_msg.header.stamp = poseStampedArray_sets[str(self_ID)].poseArray[-1].header.stamp
-                tf_msg.header.frame_id = "/map1"
-                tf_msg.child_frame_id = "/map{}".format(self_ID)
-                pose_map1 = posemath.fromMsg( poseStampedArray_sets[str(1)].poseArray[0].pose )
-                pose_mapself = posemath.fromMsg( poseStampedArray_sets[str(self_ID)].poseArray[0].pose )
-                tf_map1_to_self = pose_map1.Inverse() * pose_mapself
-                tf_msg.transform.translation = posemath.toMsg(tf_map1_to_self).position
-                tf_msg.transform.rotation = posemath.toMsg(tf_map1_to_self).orientation
+                tf_msg.header.frame_id = "/map{}".format(self_ID)
+                tf_msg.child_frame_id = "/map1"
+                
+                print("read map1")
+                poseStampedArray_locks[ str(1) ].acquire()
+                tf_msg.header.stamp = poseStampedArray_sets[str(1)].poseArray[-1].header.stamp
+                pose_map1 = posemath.fromMsg(poseStampedArray_sets[str(1)].poseArray[0].pose)
+                poseStampedArray_locks[ str(1) ].release()
+                
+                print("create init_pose")
+                init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.7071, y=0, z=0, w=0.7071))
+                print("init_pose:" + str(init_pose))
+                pose_map1 = init_pose * pose_map1 * init_pose.Inverse()
+                tf_msg.transform.translation = posemath.toMsg(pose_map1).position
+                tf_msg.transform.rotation = posemath.toMsg(pose_map1).orientation
+                #2D# tf_msg.transform.translation.z = 0
+                #2D# tf_msg.transform.rotation.x = 0
+                #2D# tf_msg.transform.rotation.y = 0
+                #2D# tf_msg.transform.rotation.z = pow(1-pow(tf_msg.transform.rotation.w, 2), 0.5) * tf_msg.transform.rotation.z / abs(tf_msg.transform.rotation.z)
                 print(tf_msg)
                 br.sendTransformMessage(tf_msg)
     
@@ -202,12 +215,16 @@ def BackendOpt():
                 posearray_target = PoseStampedArray()
                 trackutils.AccReltrans2PoseStampedArray(tranStampedArray_sets[key],posearray_target)
                 target_init_pose = trackutils.LoopPosearrayInitpose(LooptransArray_sets[key].transformArray[0], poseStampedArray_sets[str(self_ID)], posearray_target)
+                if not poseStampedArray_sets.has_key(key):
+                    poseStampedArray_locks[key] = threading.Lock()
+                poseStampedArray_locks[key].acquire()
                 poseStampedArray_sets[key] = trackutils.RotatePoserray(target_init_pose, posearray_target)
                 valid_loop_array = trackutils.valid_loop(poseStampedArray_sets, LooptransArray_sets[key])
                 if len(valid_loop_array.transformArray) > 0:
                     trackutils.PoseStampedarray2G2O(g2ofilename,poseStampedArray_sets[key], True )
                     valid_loop_array = trackutils.valid_loop(poseStampedArray_sets, tranStampedArray_sets[key])
                     trackutils.AddTransArray2G2O(g2ofilename, valid_loop_array)
+                poseStampedArray_locks[key].release()
                 
             LooptransArray_locks[key].release()
             tranStampedArray_locks[key].release()

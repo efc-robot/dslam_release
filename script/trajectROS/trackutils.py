@@ -208,6 +208,7 @@ def VOPoseArray2MapPoseArray(vo_pose_array, map_pose_array):
     init_pose.orientation.w = 0.7071
     for pose in vo_pose_array.poses:
         map_pose_array.poses.append(posemath.toMsg( posemath.fromMsg( init_pose ) *  posemath.fromMsg( pose ) ))
+        #2D# map_pose_array.poses[-1].position.z = 0
     return map_pose_array
 
 

@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
+  <arg name="datasetpath" value="/home/xuzhl/dataset/tum/rgbd_dataset_freiburg2_desk/" />
+  <arg name="robotid1" value="0" />
+  <arg name="framestart1" value="1" />
+  <arg name="frameend1" value="3000" />
+  
+  
+  <node name="publish" pkg="dslam_sp" required="false" type="publish_merge_tum" output="screen" args="-p $(arg datasetpath) -i $(arg robotid1) -s $(arg framestart1) -e $(arg frameend1)"/>
+  
+  <node name="sift_ef" pkg="dslam_sp" required="true" type="sift_EF" output="screen">
+    <remap from="image" to="/merge/img_depth_file" />
+  </node>
+
+  
+  <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry_sift" output="screen">
+    <remap from="feature" to="/sift_EF/featurepoints_descriptors" />
+  </node>
+
+    
+  <node name="gen_tf" pkg="dslam_sp" required="true" type="generate_track_node.py" output="screen">
+    <remap from="relpose" to="/visual_odometry/transform_relative_with_image" />
+  </node>
+
+  <node name="gem_extract" pkg="dslam_sp" required="true" type="extract_feature_ros.py"  args="-w $(arg gemweightspath)" output="screen" >
+    <remap from="PRrepresentor" to="GEM_PRrepresentor" />
+  </node>
+
+  <node name="gem_receiver" pkg="dslam_sp" required="true" type="receiver_ros_multi.py"   args="-i $(arg robotid1)" output="screen">
+    <remap from="PRrepresentor" to="GEM_PRrepresentor" />
+    <remap from = "/robot$(arg robotid1)/loopfnames" to="/robot1/loopfnames" />
+    <!-- <remap from="looppose" to="GEM_LOOPS" /> -->
+  </node>
+
+  <!-- <node name="fnames2pose" pkg="dslam_sp" required="true" type="vo_loop_fnames_orb"  args="-p $(arg datasetpath)" output="screen">
+    <remap from="filenames" to="/loopfnames" />
+    <remap from="VO_loop_relpose" to="/looppose" />
+  </node> -->
+
+
+  <node name="loop_str_frames" pkg="dslam_sp" required="true" type="string2frame.py" args="-p $(arg datasetpath) -i $(arg robotid1)" output="screen">
+    <remap from="loopstring" to="/robot1/loopfnames" />
+    <remap from="loopframe" to="/robot1/loopframe" />
+  </node>
+
+  <node name="loop_frames" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
+  <remap from="loopframes" to="/robot1/loopframe" />
+  <remap from="VO_loop_relpose" to="/looppose" />
+  </node>
+
+  <node name="map_octomap" pkg="dslam_sp" required="true" type="rgbd2octomap_ros" output="screen">
+    <remap from="data" to="/pose_with_image" />
+    <remap from="trajectory_dir" to="/home/xuzhl/dataset/tum/rgbd_dataset_freiburg2_desk/trajectory_sift_200" />
+  </node>
+  
+<node name="rviz" pkg="rviz" required="true" type="rviz" output="screen"/>
+
+</launch>

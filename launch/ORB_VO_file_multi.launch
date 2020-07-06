@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-<!-- <arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" /> -->
-<!-- <arg name="datasetpath" value="/home/xuzhl/dataset/image_503_loop/pic/" /> -->
+<arg name="gemweightspath" value="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
+<arg name="datasetpath" value="/home/xuzhl/dataset/image_503_loop/pic/" />
+<!-- <arg name="gemweightspath" value="/home/yujc/robotws/DSLAM_one/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth" /> -->
+<!-- <arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" /> -->
 
-<arg name="gemweightspath" value="/home/yujc/robotws/DSLAM_one/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth" />
-<arg name="datasetpath" value="/home/yujc/robotws/dataset/image_503_loop/" />
 <arg name="robotid1" value="1" />
 <arg name="framestart1" value="1" />
 <arg name="frameend1" value="1700" />
@@ -44,7 +44,7 @@
     <remap from="/pose_with_image" to="/robot1/pose_with_image"/>
   </node>
 
-   <node name="pointcloud1" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
+  <node name="pointcloud1" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
     <remap from="/pose_with_image" to="/robot1/pose_with_image" />
     <remap from="/pointcloud_part_local" to="/robot1/pointcloud_part_local" />
   </node>
@@ -74,7 +74,7 @@
   </node>
 
 
-    <node name="sp_ORB2" pkg="dslam_sp" required="true" type="orb_EF" output="screen">
+  <node name="sp_ORB2" pkg="dslam_sp" required="true" type="orb_EF" output="screen">
     <remap from="image" to="/robot2/merge/img_depth_file" />
     <remap from="/orb_EF/featurepoints_descriptors" to="/robot2/orb_EF/featurepoints_descriptors" />
   </node>
@@ -93,7 +93,7 @@
     <remap from="/pose_with_image" to="/robot2/pose_with_image"/>
   </node>
 
-   <node name="pointcloud2" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
+  <node name="pointcloud2" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
     <remap from="/pose_with_image" to="/robot2/pose_with_image" />
     <remap from="/pointcloud_part_local" to="/robot2/pointcloud_part_local" />
   </node>
@@ -156,8 +156,8 @@
   </node>
 
   <node name="loop_frames1" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
-  <remap from="loopframes" to="/robot1/loopframe" />
-  <remap from="VO_loop_relpose" to="/robot1/looppose" />
+    <remap from="loopframes" to="/robot1/loopframe" />
+    <remap from="VO_loop_relpose" to="/robot1/looppose" />
   </node>
 
 
@@ -168,10 +168,11 @@
   </node>
 
   <node name="loop_frames2" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
-  <remap from="loopframes" to="/robot2/loopframe" />
-  <remap from="VO_loop_relpose" to="/robot2/looppose" />
+    <remap from="loopframes" to="/robot2/loopframe" />
+    <remap from="VO_loop_relpose" to="/robot2/looppose" />
   </node>
 
   <node name="rviz" pkg="rviz" required="true" type="rviz" output="screen"/>
+  <node name="rviz2" pkg="rviz" required="true" type="rviz" output="screen"/>
 
 </launch>
