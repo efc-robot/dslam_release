@@ -3,7 +3,6 @@
 <arg name="gemweightspath" default="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
 <arg name="datasetpath" default="/home/xuzhl/dataset/image_503_loop/pic/" />
 <arg name="robotid" default="1" />
-<arg name="otherid" default="2" />
 <arg name="framestart" default="1" />
 <arg name="frameend" default="1700" />
 
@@ -34,13 +33,12 @@
 
 
   <node name="gem_extract" pkg="dslam_sp" required="true" type="extract_feature_ros.py"  args="-w $(arg gemweightspath)" output="log" >
-    <remap from="PRrepresentor" to="GEM_PRrepresentor" />
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
     <remap from="/merge/img_depth_file" to="merge/img_depth_file" />
   </node>
 
   <node name="gem_receiver" pkg="dslam_sp" required="true" type="receiver_ros_multi.py" args=" -i $(arg robotid)" output="log">
-    <remap from="PRrepresentor" to="GEM_PRrepresentor" />
-    <remap from="OtherPresentor" to="/robot$(arg otherid)/GEM_PRrepresentor" />
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
     <remap from="loopfnames" to="loopstring" />
     <!-- <remap from="looppose" to="GEM_LOOPS" /> -->
   </node>

@@ -5,7 +5,6 @@
     <include file="$(find dslam_sp)/launch/includes/single.launch.xml">
     <arg name="robotid" value="4"/>
     <arg name="framestart" value="1"/>
-    <arg name="otherid" value="3"/>
     <arg name="frameend" value="1700" />
     </include>
 </group>
@@ -14,7 +13,6 @@
     <include file="$(find dslam_sp)/launch/includes/single.launch.xml">
     <arg name="robotid" value="3"/>
     <arg name="framestart" value="1200"/>
-    <arg name="otherid" value="2"/>
     <arg name="frameend" value="2874" />
     </include>
 </group>
