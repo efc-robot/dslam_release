@@ -181,6 +181,7 @@ def Transarray2G2O(g2ofname, trans_array):
 
 def AccReltrans2PoseStampedArray(reltrans_array, posestamped_array):
     poseinit = PoseStamped()
+    poseinit.header.stamp = reltrans_array.transformArray[0].header.stamp
     poseinit.header.frame_id = reltrans_array.transformArray[0].child_frame_id
     poseinit.pose.orientation.w = 1
     nowframe = poseinit.header.frame_id
@@ -191,6 +192,7 @@ def AccReltrans2PoseStampedArray(reltrans_array, posestamped_array):
         assert (trans.child_frame_id == nowframe)
         nowframe = trans.header.frame_id
         posetmp = PoseStamped()
+        posetmp.header.stamp = trans.header.stamp
         posetmp.header.frame_id = nowframe
         current_pose =  posemath.toMsg ( posemath.fromMsg(current_pose) *  posemath.fromMsg( trans2pose(trans.transform ) ) )
         posetmp.pose = current_pose

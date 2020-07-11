@@ -44,12 +44,12 @@
     <remap from="/pose_with_image" to="/robot1/pose_with_image"/>
   </node>
 
-  <node name="pointcloud1" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
-    <remap from="/pose_with_image" to="/robot1/pose_with_image" />
-    <remap from="/pointcloud_part_local" to="/robot1/pointcloud_part_local" />
+  <node name="pointcloud1" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
+    <remap from="data" to="/robot1/pose_with_image" />
+    <!-- <remap from="/pointcloud_part_local" to="/robot1/pointcloud_part_local" /> -->
   </node>
 
-  <node name="octomap_server1" pkg="octomap_server" type="octomap_server_node" output="log">
+  <node name="octomap_server1" pkg="octomap_server" type="multi_octomap_server_node" output="log">
 
     <!-- resolution in meters per pixel -->
     <param name="resolution" value="0.25" />
@@ -68,8 +68,10 @@
     <param name="pointcloud_min_z" value="-1000" />
 
     <!-- topic from where pointcloud2 messages are subscribed -->
-    <remap from="/cloud_in" to="/robot1/pointcloud_part_local" />
+    <remap from="/cloud_in" to="/pointcloud_part_local" />
+    <remap from="/octomap_in" to="/robot1/octomap_in" />
     <remap from="/projected_map" to="/robot1/projected_map" />
+    <remap from="/octomap_binary" to="/robot1/octomap_binary" />
  
   </node>
 
@@ -93,12 +95,12 @@
     <remap from="/pose_with_image" to="/robot2/pose_with_image"/>
   </node>
 
-  <node name="pointcloud2" pkg="dslam_sp" required="true" type="rgbd2pointcloud.py" output="screen">
-    <remap from="/pose_with_image" to="/robot2/pose_with_image" />
-    <remap from="/pointcloud_part_local" to="/robot2/pointcloud_part_local" />
+  <node name="pointcloud2" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
+    <remap from="data" to="/robot2/pose_with_image" />
+    <!-- <remap from="/pointcloud_part_local" to="/robot2/pointcloud_part_local" /> -->
   </node>
 
-  <node name="octomap_server2" pkg="octomap_server" type="octomap_server_node" output="log">
+  <node name="octomap_server2" pkg="octomap_server" type="multi_octomap_server_node" output="log">
 
     <!-- resolution in meters per pixel -->
     <param name="resolution" value="0.25" />
@@ -117,8 +119,10 @@
     <param name="pointcloud_min_z" value="-1000" />
 
     <!-- topic from where pointcloud2 messages are subscribed -->
-    <remap from="/cloud_in" to="/robot2/pointcloud_part_local" />
+    <remap from="/cloud_in" to="/pointcloud_part_local" />
+    <remap from="/octomap_in" to="/robot2/octomap_in" />
     <remap from="/projected_map" to="/robot2/projected_map" />
+    <remap from="/octomap_binary" to="/robot2/octomap_binary" />
  
   </node>
 

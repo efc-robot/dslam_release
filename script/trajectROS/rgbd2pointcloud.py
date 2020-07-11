@@ -23,6 +23,7 @@ class PointCloud_Publisher:
 
     #回调函数输入的应该是msg
     def callback(self, data):
+        # t1 = rospy.get_time()
         camera_cx    =   data.P[2]
         camera_cy    =   data.P[6]
         camera_fx     =   data.P[0]
@@ -33,24 +34,39 @@ class PointCloud_Publisher:
         cv_depth = self.bridge.imgmsg_to_cv2(data.depth, desired_encoding="passthrough")
         height = cv_depth.shape[0]
         weight = cv_depth.shape[1]
+        # t2 = rospy.get_time()
+        # print("Get Msg: " + str(t2-t1) + "s")
 
+        # t1 = rospy.get_time()
         buffer = []
         for row in range(height):            #遍历高
             for col in range(weight):         #遍历宽
+                # t11 = rospy.get_time()
                 d = cv_depth[row, col]
                 Luma = cv_image[row, col]
+                # t22 = rospy.get_time()
+                # print("     read depth: " + str(t22-t11) + "s")
+                # t11 = rospy.get_time()
                 if d == 0:
                     continue
                 z = d / camera_scale
                 x = (col - camera_cx) * z / camera_fx
                 y = (row - camera_cy) * z / camera_fy
+                # t22 = rospy.get_time()
+                # print("     compute point position: " + str(t22-t11) + "s")
+                # t11 = rospy.get_time()
                 if abs(y) > 0.1 :
                     continue
                 buffer.append(struct.pack('ffff', x, y, z, Luma))
+                # t22 = rospy.get_time()
+                # print("     append buffer: " + str(t22-t11) + "s")
                 # point = kdl.Frame(kdl.Vector(x, y, z))
                 # point_global = posemath.fromMsg( data.pose ) * point
                 # buffer.append(struct.pack('ffff', point_global.p.x(), point_global.p.y(), point_global.p.z(), Luma))
+        # t2 = rospy.get_time()
+        # print("Img to Pointcloud buffer: " + str(t2-t1) + "s")
 
+        # t1 = rospy.get_time()
         ros_msg = PointCloud2()
 
         ros_msg.header = data.header
@@ -70,9 +86,13 @@ class PointCloud_Publisher:
         ros_msg.row_step = ros_msg.point_step * ros_msg.width * ros_msg.height
         ros_msg.is_dense = False
         ros_msg.data = "".join(buffer)
+        # t2 = rospy.get_time()
+        # print("Pointcloud buffer to Pointcloud msg: " + str(t2-t1) + "s")
 
+        # t1 = rospy.get_time()
         self.pointcloud_pub.publish(ros_msg)
-
+        # t2 = rospy.get_time()
+        # print("Publish: " + str(t2-t1) + "s")
         # tf_msg = TransformStamped()
         # tf_msg.header = data.header
         # tf_msg.header.frame_id = "odom"

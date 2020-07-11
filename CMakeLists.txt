@@ -206,6 +206,7 @@ add_executable(visual_odometry_orb src/visual_odometry_orb_node_orbh.cpp)
 add_executable(visual_odometry_sift src/visual_odometry_sift_node.cpp)
 add_executable(generate_track src/generate_track_node.cpp)
 add_executable(rgbd2octomap_ros src/rgbd2octomap_ros.cpp)
+add_executable(rgbd2pointcloud src/rgbd2pointcloud_ros.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -230,6 +231,7 @@ add_dependencies(visual_odometry_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 add_dependencies(visual_odometry_sift ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(generate_track ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rgbd2octomap_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(rgbd2pointcloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(merge_img_depth
@@ -307,6 +309,10 @@ target_link_libraries(generate_track
   ${OpenCV_LIBRARIES}
 )
 target_link_libraries(rgbd2octomap_ros
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+target_link_libraries(rgbd2pointcloud
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )

@@ -11,6 +11,8 @@ from tf_conversions import posemath
 import PyKDL as kdl
 from dslam_sp.msg import TransformStampedArray, PoseStampedArray, TransformStamped_with_image, Pose_with_image
 from dslam_sp.srv import *
+from octomap_msgs.msg import Octomap
+from octomap_msgs.srv import GetOctomap
 import tf2_ros
 from geometry_msgs.msg import TransformStamped, PoseStamped, Pose, PoseArray
 from cv_bridge import CvBridge, CvBridgeError
@@ -35,9 +37,12 @@ LooptransArray_locks = {}
 poseStampedArray_sets = {}
 poseStampedArray_locks = {}
 
+published_map = {}
+
 posearray_pub = None
 posearray_pub_test = None
 pose_with_image_pub = None
+map_pub = None
 br = tf.TransformBroadcaster()
 
 BackendRunning = False
@@ -71,6 +76,7 @@ def process_self():
             poseStampedArray_locks[ str(current_robot_id) ].release()
             vo_posearray = PoseArray()
             map_posearray = PoseArray()
+            map_posearray.header.stamp = data.TF.header.stamp
             map_posearray.header.frame_id = "map{}".format(self_ID)
 
             poseStampedArray_locks[ str(current_robot_id ) ].acquire()
@@ -125,7 +131,7 @@ def callback_loop(data):
     print(data)
 
 def BackendThread():
-    global posearray_pub, transArray, poseStampedArray_sets, poseStampedArray_locks, LooptransArray_sets, LooptransArray_locks,BackendRunning, NewLoop, br
+    global posearray_pub, transArray, poseStampedArray_sets, poseStampedArray_locks, LooptransArray_sets, LooptransArray_locks,BackendRunning, NewLoop, br, published_map, map_pub
     while True:
         time.sleep(2)
         print("BackendOpt..........running")
@@ -135,30 +141,45 @@ def BackendThread():
             BackendOpt()
             BackendRunning = False
 
-            if (self_ID != 1) and poseStampedArray_sets.has_key(str(1)) :
-                print("start")
-                tf_msg = TransformStamped()
-                tf_msg.header.frame_id = "/map{}".format(self_ID)
-                tf_msg.child_frame_id = "/map1"
-                
-                print("read map1")
-                poseStampedArray_locks[ str(1) ].acquire()
-                tf_msg.header.stamp = poseStampedArray_sets[str(1)].poseArray[-1].header.stamp
-                pose_map1 = posemath.fromMsg(poseStampedArray_sets[str(1)].poseArray[0].pose)
-                poseStampedArray_locks[ str(1) ].release()
-                
-                print("create init_pose")
-                init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.7071, y=0, z=0, w=0.7071))
-                print("init_pose:" + str(init_pose))
-                pose_map1 = init_pose * pose_map1 * init_pose.Inverse()
-                tf_msg.transform.translation = posemath.toMsg(pose_map1).position
-                tf_msg.transform.rotation = posemath.toMsg(pose_map1).orientation
-                #2D# tf_msg.transform.translation.z = 0
-                #2D# tf_msg.transform.rotation.x = 0
-                #2D# tf_msg.transform.rotation.y = 0
-                #2D# tf_msg.transform.rotation.z = pow(1-pow(tf_msg.transform.rotation.w, 2), 0.5) * tf_msg.transform.rotation.z / abs(tf_msg.transform.rotation.z)
-                print(tf_msg)
-                br.sendTransformMessage(tf_msg)
+            for robot_id in poseStampedArray_sets.keys():
+                if ( int(robot_id) != self_ID):
+                    print("start")
+                    tf_msg = TransformStamped()
+                    tf_msg.header.frame_id = "/map{}".format(self_ID)
+                    tf_msg.child_frame_id = "/map{}".format(robot_id)
+                    
+                    print("read map" + robot_id)
+                    poseStampedArray_locks[ robot_id ].acquire()
+                    print(poseStampedArray_sets[robot_id].poseArray[-1])
+                    tf_msg.header.stamp = rospy.Time.now()
+                    pose_map1 = posemath.fromMsg(poseStampedArray_sets[robot_id].poseArray[0].pose)
+                    poseStampedArray_locks[robot_id].release()
+                    
+                    print("create init_pose")
+                    init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.7071, y=0, z=0, w=0.7071))
+                    print("init_pose:" + str(init_pose))
+                    pose_map1 = init_pose * pose_map1 * init_pose.Inverse()
+                    tf_msg.transform.translation = posemath.toMsg(pose_map1).position
+                    tf_msg.transform.rotation = posemath.toMsg(pose_map1).orientation
+                    #2D# tf_msg.transform.translation.z = 0
+                    #2D# tf_msg.transform.rotation.x = 0
+                    #2D# tf_msg.transform.rotation.y = 0
+                    #2D# tf_msg.transform.rotation.z = pow(1-pow(tf_msg.transform.rotation.w, 2), 0.5) * tf_msg.transform.rotation.z / abs(tf_msg.transform.rotation.z)
+                    print(tf_msg)
+                    br.sendTransformMessage(tf_msg)
+
+                    if not published_map.has_key(robot_id):
+                        print ("start wait_for_service " + '/robot{}/octomap_binary'.format(robot_id))
+                        rospy.wait_for_service('/robot{}/octomap_binary'.format(robot_id) )
+                        print ("new handle")
+                        map_srvhandle = rospy.ServiceProxy('/robot{}/octomap_binary'.format(robot_id), GetOctomap)
+                        print ("get map")
+                        map_result = map_srvhandle()
+                        print ("gotten map")
+                        print("map_result.stamp:" + str(map_result.map.header.stamp) + "tf.stamp:" + str(tf_msg.header.stamp))
+                        map_pub.publish(map_result.map)
+                        print("published map")
+                        published_map[robot_id] = 1
     
 
 def BackendOpt():
@@ -351,7 +372,7 @@ def intertranscallback(msg):
 
 
 def main(argv):
-    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub
+    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub, map_pub
     opts, args = getopt.getopt(argv,"i:")
     for opt, arg in opts:
         if opt in ("-i"):
@@ -374,8 +395,9 @@ def main(argv):
     # rospy.Subscriber("/robot{}/loopinterpose".format(self_ID), PoseStampedArray, interposecallback )
     rospy.Subscriber("/robot{}/loopintertrans".format(self_ID), TransformStampedArray, intertranscallback )
     posearray_pub = rospy.Publisher("posearray",PoseArray, queue_size=3)
-    posearray_pub_test = rospy.Publisher("/robot{}/posearray_test".format(self_ID),PoseArray, queue_size=3)
-    pose_with_image_pub = rospy.Publisher("pose_with_image",Pose_with_image, queue_size=3)
+    posearray_pub_test = rospy.Publisher("/robot{}/posearray_test".format(self_ID), PoseArray, queue_size=3)
+    pose_with_image_pub = rospy.Publisher("pose_with_image", Pose_with_image, queue_size=3)
+    map_pub = rospy.Publisher("/robot{}/octomap_in".format(self_ID), Octomap, queue_size=3)
     backt = threading.Thread(target=BackendThread)
     self_tran_t = threading.Thread(target=process_self)
     backt.setDaemon(True)
