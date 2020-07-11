@@ -37,6 +37,7 @@ def callback(msg):
     frameids = msg.data.split()
     frameid1 = frameids[0]
     frameid2 = frameids[1]
+    # print("loop detected!!!")
     print(frameid1, frameid2)
     robotid1 = int(int(frameid1)/1e8)
     robotid2 = int(int(frameid2)/1e8)
@@ -91,15 +92,17 @@ def callback(msg):
         # rospy.wait_for_service('/robot{}/posearray_srv'.format(self_ID) )
         # posearray_srvhandle = rospy.ServiceProxy('/robot{}/posearray_srv'.format(self_ID), posearray_srv)
         # posearray_result = posearray_srvhandle(str(self_ID))
-
+        # print("loop find server!!!")
         rospy.wait_for_service('/robot{}/transarray_srv'.format(self_ID) )
         transarray_srvhandle = rospy.ServiceProxy('/robot{}/transarray_srv'.format(self_ID), transarray_srv)
         transarray_result = transarray_srvhandle(str(self_ID))
+        # print("loop get server!!!")
 
 
         # inter_posearray_pub[str(robotid2)].publish(posearray_result.posearray)
         inter_transarray_pub[str(robotid2)].publish(transarray_result.transarray)
         loop_inter_pub[str(robotid2)].publish(interframesMsg)
+        # print("loop publised!!!")
 
 
 def intercallback(msg):
@@ -137,6 +140,7 @@ def main(argv):
 
     rospy.init_node('matcher', anonymous=True)
     bridge = CvBridge()
+    print("test log OK")
     rospy.Subscriber("loopstring", String, callback)
     rospy.Subscriber("/robot{}/loopinterframe".format(self_ID), InterMatch, intercallback)
     looptrans_frames_pub = rospy.Publisher("loopframe",MatchedFrame, queue_size=3)
