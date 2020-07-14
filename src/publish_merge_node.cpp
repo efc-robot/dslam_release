@@ -113,6 +113,15 @@ int main(int argc, char **argv)
     // cv::imshow(FileDir, image_raw);
     // cv::waitKey(1); 
   }
+
+//   while (ros::ok())   //循环发布msg
+//   {
+//     pub.publish(img_depth_msg);//以1Hz的频率发布msg
+//     pub_image.publish(img_depth_msg.image);
+//     pub_depth.publish(img_depth_msg.depth);
+//     pub_info.publish(camera_info);//以1Hz的频率发布msg
+//     loop_rate.sleep();//根据前面的定义的loop_rate,设置1s的暂停
+//   }
   
   return 0;
 }
