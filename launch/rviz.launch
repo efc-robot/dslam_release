@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node name="rviz1" pkg="rviz" required="true" type="rviz" output="screen"/>
+    <node name="rviz2" pkg="rviz" required="true" type="rviz" output="screen"/>
+    <node name="rviz3" pkg="rviz" required="true" type="rviz" output="screen"/>
+
+</launch>
