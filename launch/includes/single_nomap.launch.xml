@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<launch>
+<arg name="gemweightspath" default="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
+<arg name="datasetpath" default="/home/xuzhl/dataset/image_503_loop/pic/" />
+<arg name="robotid" default="1" />
+<arg name="framestart" default="1" />
+<arg name="frameend" default="1700" />
+
+  <node name="publish" pkg="dslam_sp" required="false" type="publish_merge" args="-p $(arg datasetpath) -i $(arg robotid) -s $(arg framestart) -e $(arg frameend)" output="screen">
+    <remap from="/merge/img_depth_file" to="merge/img_depth_file" />
+    <remap from="/mynteye/left_rect/image" to="mynteye/left_rect/image" />
+    <remap from="/mynteye/left_rect/depth" to="mynteye/left_rect/depth" />
+  </node>
+
+  <node name="sp_ORB" pkg="dslam_sp" required="true" type="orb_EF" output="screen">
+    <remap from="image" to="merge/img_depth_file" />
+    <remap from="/orb_EF/featurepoints_descriptors" to="orb_EF/featurepoints_descriptors" />
+  </node>
+
+  
+  <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry_orb" output="screen">
+    <remap from="feature" to="orb_EF/featurepoints_descriptors" />
+    <remap from="/visual_odometry/transform_relative" to="visual_odometry/transform_relative" />
+    <remap from="/visual_odometry/transform_relative_with_image" to="visual_odometry/transform_relative_with_image" />
+  </node>
+
+  <node name="gen_tf" pkg="dslam_sp" required="true" type="generate_track_multi_node.py" args ="-i $(arg robotid) -t" output="log">
+    <remap from="relpose" to="visual_odometry/transform_relative_with_image" />
+    <remap from="posearray" to="posearray" />
+    <remap from="looppose" to="looppose"/>
+    <remap from="/pose_with_image" to="pose_with_image"/>
+  </node>
+
+
+  <node name="gem_extract" pkg="dslam_sp" required="true" type="extract_feature_ros.py"  args="-w $(arg gemweightspath)" output="log" >
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
+    <remap from="/merge/img_depth_file" to="merge/img_depth_file" />
+  </node>
+
+  <node name="gem_receiver" pkg="dslam_sp" required="true" type="receiver_ros_multi.py" args=" -i $(arg robotid)" output="log">
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
+    <remap from="loopfnames" to="loopstring" />
+    <!-- <remap from="looppose" to="GEM_LOOPS" /> -->
+  </node>
+
+
+  <node name="loop_str_frames" pkg="dslam_sp" required="true" type="string2frame.py" args="-p $(arg datasetpath) -i $(arg robotid)" output="log">
+    <remap from="loopstring" to="loopstring" />
+    <remap from="loopframe" to="loopframe" />
+    
+  </node>
+
+  <node name="loop_frames" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
+    <remap from="loopframes" to="loopframe" />
+    <remap from="VO_loop_relpose" to="looppose" />
+  </node>
+
+</launch>

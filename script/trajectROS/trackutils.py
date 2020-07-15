@@ -476,8 +476,8 @@ def LoopPosearrayInitpose(transformstamped, posestampedarray_src, posestampedarr
         print("========================================checkHeaderID===========================")
         print("transformstamped.header.frame_id = {} :  posestampedarray_src = {}".format(transformstamped.header.frame_id, posestampedarray_src) )
         print("transformstamped.child_frame_id = {} :  posestampedarray_target = {}".format(transformstamped.child_frame_id, posestampedarray_target) )
-        assert(False)
-        return
+        # assert(False)
+        return None
 
     trans_r1_f1_findex = posemath.fromMsg(posestampedarray_src.poseArray[id_src].pose)
     trans_r1_r2_findex_findex = posemath.fromMsg(trans2pose(transformstamped.transform)).Inverse()

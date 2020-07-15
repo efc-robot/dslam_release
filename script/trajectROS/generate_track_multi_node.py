@@ -47,7 +47,7 @@ br = tf.TransformBroadcaster()
 
 BackendRunning = False
 NewLoop = False
-
+withmap = True
 
 count_save = 0
 
@@ -173,7 +173,7 @@ def callback_loop(data):
     print(data)
 
 def BackendThread():
-    global posearray_pub, transArray, poseStampedArray_sets, poseStampedArray_locks, LooptransArray_sets, LooptransArray_locks,BackendRunning, NewLoop, br, published_map, map_pub
+    global posearray_pub, transArray, poseStampedArray_sets, poseStampedArray_locks, LooptransArray_sets, LooptransArray_locks,BackendRunning, NewLoop, br, published_map, map_pub, withmap
     while True:
         time.sleep(2)
         print("BackendOpt..........running")
@@ -181,10 +181,27 @@ def BackendThread():
         print("Keys: ")
         print(poseStampedArray_sets.keys())
 
+        #获取其他机器人的trans
+        for key, _ in LooptransArray_sets.items():
+            if not (int(key) == self_ID):
+                print("loop find server!!!" + '/robot{}/transarray_srv'.format(key))
+                rospy.wait_for_service('/robot{}/transarray_srv'.format(key) )
+                print("server waited!!!" + '/robot{}/transarray_srv'.format(key))
+                transarray_srvhandle = rospy.ServiceProxy('/robot{}/transarray_srv'.format(key), transarray_srv)
+                transarray_result = transarray_srvhandle(str(key))
+                print("loop get server!!!")
+                print("transarray len: {} === OJBK".format(transarray_result.transarray) )
+                if not tranStampedArray_sets.has_key(str(key)):
+                    tranStampedArray_locks[str(key)] = threading.Lock()
+                tranStampedArray_locks[key].acquire()
+                tranStampedArray_sets[key] = transarray_result.transarray
+                tranStampedArray_locks[key].release()
+
+
         if (not BackendRunning) and (NewLoop):
             BackendRunning = True
             NewLoop = False
-            BackendOpt()
+            BackendOpt() #这里面可能把NewLoop设置为True。主要是应对，回环已经检测到了，但是轨迹还没有来得及更新到的情况。
             BackendRunning = False
 
         for robot_id in poseStampedArray_sets.keys(): #发送多个机器人第一帧之间的TF树
@@ -214,7 +231,7 @@ def BackendThread():
                 print(tf_msg)
                 br.sendTransformMessage(tf_msg)
 
-            if not published_map.has_key(robot_id) and not (int(robot_id) == self_ID):
+            if not published_map.has_key(robot_id) and not (int(robot_id) == self_ID) and withmap:
                 print ("start wait_for_service " + '/robot{}/octomap_binary'.format(robot_id))
                 rospy.wait_for_service('/robot{}/octomap_binary'.format(robot_id) )
                 print ("new handle")
@@ -277,12 +294,20 @@ def BackendOpt():
                 tranStampedArray_sets[key] = TransformStampedArray()
             tranStampedArray_locks[key].acquire()
             LooptransArray_locks[key].acquire()
+
+
+
             if len(LooptransArray_sets[key].transformArray) > 0 and len(tranStampedArray_sets[key].transformArray)>0 :
                 
 
                 posearray_target = PoseStampedArray()
                 trackutils.AccReltrans2PoseStampedArray(tranStampedArray_sets[key],posearray_target)
                 target_init_pose = trackutils.LoopPosearrayInitpose(LooptransArray_sets[key].transformArray[0], poseStampedArray_sets[str(self_ID)], posearray_target)
+
+                if not target_init_pose:
+                    NewLoop = True
+                    break
+
                 if not poseStampedArray_sets.has_key(key):
                     poseStampedArray_locks[key] = threading.Lock()
                 poseStampedArray_locks[key].acquire()
@@ -343,6 +368,7 @@ def BackendOpt():
     # posearray_pub_test.publish(posearray)
     
     poseStampedArray_locks[str(self_ID)].release()
+    
     # poseStampedArray_locks[str(3-self_ID)].release()
 
 
@@ -420,11 +446,14 @@ def intertranscallback(msg):
 
 
 def main(argv):
-    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub, map_pub
-    opts, args = getopt.getopt(argv,"i:")
+    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub, map_pub, withmap
+    opts, args = getopt.getopt(argv,"i:t")
     for opt, arg in opts:
         if opt in ("-i"):
             self_ID = int(arg)
+        if opt in ("-t"):
+            withmap = False
+            
     
     tranStampedArray_sets[ str(self_ID)] =  TransformStampedArray()
     tranStampedArray_locks[str(self_ID)] = threading.Lock()
@@ -441,7 +470,7 @@ def main(argv):
     srvhandle = rospy.Service('/robot{}/transarray_srv'.format(self_ID), transarray_srv, handle_transarray_srv)
     rospy.Subscriber("looppose", TransformStamped, callback_loop)
     # rospy.Subscriber("/robot{}/loopinterpose".format(self_ID), PoseStampedArray, interposecallback )
-    rospy.Subscriber("/robot{}/loopintertrans".format(self_ID), TransformStampedArray, intertranscallback )
+    # rospy.Subscriber("/robot{}/loopintertrans".format(self_ID), TransformStampedArray, intertranscallback )
     posearray_pub = rospy.Publisher("posearray",PoseArray, queue_size=3)
     posearray_pub_test = rospy.Publisher("/robot{}/posearray_test".format(self_ID), PoseArray, queue_size=3)
     pose_with_image_pub = rospy.Publisher("pose_with_image", Pose_with_image, queue_size=3)

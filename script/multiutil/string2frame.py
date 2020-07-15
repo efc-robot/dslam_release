@@ -75,7 +75,7 @@ def callback(msg):
         assert (robotid1 == self_ID) #其中第一个ID得是自己
         if not loop_inter_pub.has_key(str(robotid2)):
             # inter_posearray_pub[str(robotid2)] = rospy.Publisher("/robot{}/loopinterpose".format(robotid2),PoseStampedArray, queue_size=3)
-            inter_transarray_pub[str(robotid2)] = rospy.Publisher("/robot{}/loopintertrans".format(robotid2),TransformStampedArray, queue_size=3)
+            # inter_transarray_pub[str(robotid2)] = rospy.Publisher("/robot{}/loopintertrans".format(robotid2),TransformStampedArray, queue_size=3)
 
             loop_inter_pub[str(robotid2)] = rospy.Publisher("/robot{}/loopinterframe".format(robotid2),InterMatch, queue_size=3)
         interframesMsg = InterMatch()
@@ -93,14 +93,14 @@ def callback(msg):
         # posearray_srvhandle = rospy.ServiceProxy('/robot{}/posearray_srv'.format(self_ID), posearray_srv)
         # posearray_result = posearray_srvhandle(str(self_ID))
         # print("loop find server!!!")
-        rospy.wait_for_service('/robot{}/transarray_srv'.format(self_ID) )
-        transarray_srvhandle = rospy.ServiceProxy('/robot{}/transarray_srv'.format(self_ID), transarray_srv)
-        transarray_result = transarray_srvhandle(str(self_ID))
+        # rospy.wait_for_service('/robot{}/transarray_srv'.format(self_ID) )
+        # transarray_srvhandle = rospy.ServiceProxy('/robot{}/transarray_srv'.format(self_ID), transarray_srv)
+        # transarray_result = transarray_srvhandle(str(self_ID))
         # print("loop get server!!!")
 
 
         # inter_posearray_pub[str(robotid2)].publish(posearray_result.posearray)
-        inter_transarray_pub[str(robotid2)].publish(transarray_result.transarray)
+        # inter_transarray_pub[str(robotid2)].publish(transarray_result.transarray)
         loop_inter_pub[str(robotid2)].publish(interframesMsg)
         # print("loop publised!!!")
 
