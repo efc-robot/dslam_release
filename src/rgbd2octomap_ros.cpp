@@ -78,10 +78,16 @@ void Callback(const dslam_sp::Pose_with_image::ConstPtr &msg)
     for ( int m=0; m<depth.rows; m++ ){
         for ( int n=0; n<depth.cols; n++ )
         {
-            ushort d = depth.ptr<ushort> (m) [n];
-            if (d == 0)
+            float z;
+            if(depth.type()==CV_32FC1){
+                z = depth.ptr<float> (m) [n];
+            }
+            else if(depth.type()==CV_16UC1){
+                ushort d = depth.ptr<ushort> (m) [n];
+                z = float(d) / camera_scale;
+            }
+            if (z == 0)
                 continue;
-            float z = float(d) / camera_scale;
             float x = (n - camera_cx) * z / camera_fx;
             float y = (m - camera_cy) * z / camera_fy;
             pcl::PointXYZRGBA p;

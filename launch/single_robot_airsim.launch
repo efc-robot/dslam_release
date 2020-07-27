@@ -1,0 +1,60 @@
+<launch>
+<arg name="robotid" default="3" />
+
+  <node name="merge_img_depth_node" pkg="dslam_sp" type="merge_img_depth" args="-i $(arg robotid)" output="screen">
+    <remap from="mynteye/left_rect/image_rect" to="airsim_node/car_1/front_left_custom/Scene" />
+    <remap from="mynteye/depth/image_raw" to="airsim_node/car_1/front_left_custom/DepthPlanner" />
+    <remap from="merge/img_depth" to="merge/img_depth_file"/>
+  </node>
+
+  <node name="sp_ORB" pkg="dslam_sp" required="true" type="orb_EF" output="screen">
+    <remap from="image" to="merge/img_depth_file" />
+    <remap from="/orb_EF/featurepoints_descriptors" to="orb_EF/featurepoints_descriptors" />
+    <remap from="/mynteye/left_rect/camera_info" to="/airsim_node/car_1/front_left_custom/Scene/camera_info" />
+  </node>
+
+  <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry_orb" output="screen">
+    <remap from="feature" to="orb_EF/featurepoints_descriptors" />
+    <remap from="/visual_odometry/transform_relative" to="visual_odometry/transform_relative" />
+    <remap from="/visual_odometry/transform_relative_with_image" to="visual_odometry/transform_relative_with_image" />
+  </node>
+
+  <node name="gen_tf" pkg="dslam_sp" required="true" type="generate_track_multi_node.py" args ="-i $(arg robotid)" output="log">
+    <remap from="relpose" to="visual_odometry/transform_relative_with_image" />
+    <remap from="posearray" to="posearray" />
+    <remap from="looppose" to="looppose"/>
+    <remap from="/pose_with_image" to="pose_with_image"/>
+  </node>
+
+  <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
+    <remap from="data" to="pose_with_image" />
+    <remap from="/pointcloud_part_local" to="pointcloud_part_local" />
+  </node>
+
+  <node name="octomap_server" pkg="octomap_server" type="multi_octomap_server_node" output="log">
+
+    <!-- resolution in meters per pixel -->
+    <param name="resolution" value="0.25" />
+
+    <!-- name of the fixed frame, needs to be "/map" for SLAM -->
+    <param name="frame_id" type="string" value="/map$(arg robotid)" />
+
+    <!-- max range / depth resolution of the kinect in meter -->
+    <param name="sensor_model/max_range" value="100.0" />
+    <param name="latch" value="true" />
+
+    <!-- <param name="filter_ground" value="true" /> -->
+
+    <!-- max/min height for occupancy map, should be in meters -->
+    <param name="pointcloud_max_z" value="1000" />
+    <param name="pointcloud_min_z" value="-1000" />
+
+    <!-- topic from where pointcloud2 messages are subscribed -->
+    <remap from="cloud_in" to="pointcloud_part_local" />
+    <remap from="octomap_in" to="octomap_in" />
+    <remap from="projected_map" to="projected_map" />
+    <remap from="octomap_binary" to="octomap_binary" />
+ 
+  </node>
+
+</launch>

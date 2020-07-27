@@ -109,7 +109,9 @@ void img_Callback(const dslam_sp::image_depth::ConstPtr &msg, Ptr<FeatureDetecto
     Mat depth_resized;
     Mat image_resized;
     
+    // cout << "prev info:" << camera_info <<endl;
     ORB_FeatureExtract_ROS(image_raw, depth_raw, camera_info, dsize, kpts, descriptor_results, detector, descriptor, camera_info_tmp,depth_resized,image_resized);
+    // cout << "curr info:" << camera_info_tmp <<endl;
     
     dslam_sp::EF_output feature_msg;
     feature_msg.header = msg->header;

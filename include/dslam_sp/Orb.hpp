@@ -114,31 +114,42 @@ void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,c
     camera_info_tmp = camera_info;
     // cout << "orbfile 002" << endl;
     // cout << "image_raw_height: " << image_raw_height << "  image_raw_width: " << image_raw_width << endl;
-    if((float)image_raw_height/image_raw_width > 0.75) {
-        // cout << "orbfile 0021" << endl;
-        int height_ = image_raw_width /4 *3;
-        int margin = (image_raw_height - height_)/2;
-        image = image_raw(Rect(0,margin,image_raw_width,height_));
-        depth = depth_raw(Rect(0,margin,image_raw_width,height_));
-        camera_info_tmp.P[6] = camera_info_tmp.P[6] - margin;
-    }
-    else if(image_raw_height/image_raw_width < 0.75) {
-        // cout << "orbfile 0022" << endl;
-        int width_ = image_raw_height /3 *4;
-        int margin = (image_raw_width - width_)/2;
-        image = image_raw(Rect(margin,0,width_,image_raw_height));
-        depth = depth_raw(Rect(margin,0,width_,image_raw_height));
-        camera_info_tmp.P[2] = camera_info_tmp.P[2] - margin;
-        // cout <<  "width_" << width_ << "  margin" << margin << endl;
-    }
-    // cout << "orbfile 003" << endl;
-    if(image.size() != dsize){
-        resize(image, image, dsize);
-        resize(depth, depth, dsize);
-        camera_info_tmp.P[2] = camera_info_tmp.P[2] * (640.0/image.cols);
-        camera_info_tmp.P[6] = camera_info_tmp.P[6] * (480.0/image.rows);
-    }   
+    // if((float)image_raw_height/(float)image_raw_width > 0.75) {
+    //     // cout << "orbfile 0021" << endl;
+    //     int height_ = image_raw_width /4 *3;
+    //     int margin = (image_raw_height - height_)/2;
+    //     image = image_raw(Rect(0,margin,image_raw_width,height_));
+    //     depth = depth_raw(Rect(0,margin,image_raw_width,height_));
+    //     camera_info_tmp.P[6] = camera_info_tmp.P[6] - margin;
+    // }
+    // else if((float)image_raw_height/(float)image_raw_width < 0.75) {
+    //     // cout << "orbfile 0022" << endl;
+    //     int width_ = image_raw_height /3 *4;
+    //     int margin = (image_raw_width - width_)/2;
+    //     image = image_raw(Rect(margin,0,width_,image_raw_height));
+    //     depth = depth_raw(Rect(margin,0,width_,image_raw_height));
+    //     camera_info_tmp.P[2] = camera_info_tmp.P[2] - margin;
+    //     // cout <<  "width_" << width_ << "  margin" << margin << endl;
+    // }
+    // else {
+        image = image_raw;
+        depth = depth_raw;
+    // }
+    // // cout << "orbfile 003" << endl;
+    // if(image.size() != dsize){
+    //     camera_info_tmp.P[2] = camera_info_tmp.P[2] * (640.0/image.cols);//cx
+    //     camera_info_tmp.P[6] = camera_info_tmp.P[6] * (480.0/image.rows);//cy
+    //     camera_info_tmp.P[0] = camera_info_tmp.P[0] * (640.0/image.cols);//fx
+    //     camera_info_tmp.P[5] = camera_info_tmp.P[5] * (480.0/image.rows);//fy
+    //     resize(image, image, dsize);
+    //     resize(depth, depth, dsize);
+    // }   
 
+    // if( image.type() > CV_64F){
+    //     cvtColor(image, image, COLOR_BGR2GRAY);
+    // }
+
+    cout << "image.type: " << image.type() << endl;
     detector->detect ( image,keypoints );
     // cout << "orbfile 004" << endl;
     //NMS
@@ -230,10 +241,20 @@ int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat
         {
             if (RansacStatus[i] == 0)
                 continue;
-            ushort d = depth_curr.ptr<unsigned short> (int ( RAN_KP2[i].y )) [ int ( RAN_KP2[i].x ) ];
-            if ( d == 0 )   // bad depth
+            float dd;
+            if(depth_curr.type()==CV_32FC1){
+                dd = depth_curr.ptr<float> (int ( RAN_KP2[i].y )) [int ( RAN_KP2[i].x )];
+            }
+            else if(depth_curr.type()==CV_16UC1){
+                ushort d = depth_curr.ptr<ushort> (int ( RAN_KP2[i].y )) [int ( RAN_KP2[i].x )];
+                dd = float(d) / 1000.0;
+            }
+            if (dd == 0)
                 continue;
-            float dd = d/1000.0;
+            // ushort d = depth_curr.ptr<unsigned short> (int ( RAN_KP2[i].y )) [ int ( RAN_KP2[i].x ) ];
+            // if ( d == 0 )   // bad depth
+            //     continue;
+            // float dd = d/1000.0;
             Point2d p1 = pixel2cam ( RAN_KP2[i], K );
             points_3d.push_back ( Point3f ( p1.x*dd, p1.y*dd, dd ) );
             points_2d.push_back ( RAN_KP1[i] );
