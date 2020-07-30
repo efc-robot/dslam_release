@@ -145,12 +145,16 @@ void ORB_FeatureExtract_ROS(const cv::Mat &image_raw,const  cv::Mat &depth_raw,c
     //     resize(depth, depth, dsize);
     // }   
 
-    // if( image.type() > CV_64F){
-    //     cvtColor(image, image, COLOR_BGR2GRAY);
-    // }
+    Mat image_gray;
+    if( image.type() > CV_64F){
+        cvtColor(image, image_gray, COLOR_BGR2GRAY);
+    }
+    else{
+        image_gray = image;
+    }
 
     cout << "image.type: " << image.type() << endl;
-    detector->detect ( image,keypoints );
+    detector->detect ( image_gray,keypoints );
     // cout << "orbfile 004" << endl;
     //NMS
     // selectMax(NMS_Threshold, keypoints);
@@ -237,6 +241,7 @@ int ORB_Match_VO(vector<Point2f>& points_prev, vector<Point2f>& points_curr, Mat
         vector<Point2f> points_2d;        //vectors to store the coordinates of the feature points
         Mat K = ( Mat_<double> ( 3,3 ) << camera_infoP[0], 0, camera_infoP[2], 0, camera_infoP[5], camera_infoP[6], 0, 0, 1 );
         Mat img_2 = Mat::zeros(480,640,CV_8UC3);
+        cout <<  "depth_curr.type():" << depth_curr.type() << endl;
         for ( int i=0; i<RAN_KP1.size(); i++ )
         {
             if (RansacStatus[i] == 0)

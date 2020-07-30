@@ -4,14 +4,14 @@ import rospy
 import math  
 import tf   
 if __name__ == '__main__':  
-    frame_id1 = "map1"
-    frame_id2 = "odom2"
+    frame_id1 = "odom3"
+    frame_id2 = "base_link6"
     rospy.init_node('py_tf_turtle')
     listener = tf.TransformListener() #TransformListener创建后就开始接受tf广播信息，最多可以缓存10s  目前存在的问题，是四个数值的顺序我还有点问题
     rate = rospy.Rate(1.0)  
     # #1. 阻塞直到frame相通
-    # print '1. 阻塞直到frame相通'  
-    # listener.waitForTransform(frame_id1, frame_id2, rospy.Time(), rospy.Duration(4.0))
+    print '1. 阻塞直到frame相通'  
+    listener.waitForTransform(frame_id1, frame_id2, rospy.Time(), rospy.Duration(4.0))
     while not rospy.is_shutdown():  
         #2. 判断两个frame是否相通
         print '2. 判断两个frame是否相通'

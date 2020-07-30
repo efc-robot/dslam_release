@@ -79,6 +79,8 @@ void fnames_Callback(const dslam_sp::MatchedFrame::ConstPtr &msg, Ptr<FeatureDet
     const cv::Mat &Image2 = cv_fr2_img_ptr->image;
     cv_fr2_deep_ptr = cv_bridge::toCvShare(dep_ptr2, msg->frame2.depth.encoding);
     const cv::Mat &DImage2 = cv_fr2_deep_ptr->image;
+    cout <<  "msg->frame2.depth.encoding:" << msg->frame2.depth.encoding << endl;
+    cout <<  "DImage2.type():" << DImage2.type() << endl;
 
     Mat image1,image2;
     Mat depth1,depth2;
@@ -185,7 +187,7 @@ void fnames_Callback(const dslam_sp::MatchedFrame::ConstPtr &msg, Ptr<FeatureDet
     Eigen::Quaterniond q;
     Mat t;
     int matchpointNum = ORB_Match_VO(points_prev,points_curr, desc_prev, desc_curr, depth_prev, depth_curr, camera_info_tmp.P, q, t);
-    cout << "OKO5" << endl;
+    cout << "OKO5 matchpointNum=" << matchpointNum << endl;
 
 
         

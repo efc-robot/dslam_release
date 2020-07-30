@@ -134,7 +134,7 @@ def main(argv):
     rospy.Subscriber("PRrepresentor", PRrepresentor, loop_callback)
     # rospy.Subscriber("OtherPresentor", PRrepresentor, loop_callback)
     looptrans_pub = rospy.Publisher("looppose_deee",TransformStamped, queue_size=3)
-    match_loop_pub = rospy.Publisher("/robot{robot_id}/loopfnames".format(robot_id = str(self_ID)),String, queue_size=3)
+    match_loop_pub = rospy.Publisher("loopfnames",String, queue_size=3)
     rospy.spin()
 
 

@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <unistd.h>
 #include <sensor_msgs/Image.h>
 #include <dslam_sp/image_depth.h>
 
@@ -30,9 +31,9 @@ void depth_Callback(const sensor_msgs::Image::ConstPtr &msg)
         if ( (! image_queue.empty() ) ) {
             //if队列不是空的
             if ( image_queue.front()->header.stamp >= msg->header.stamp - match_thresh_i_d ) {
-                //if image[0]比depth晚或同时
+                //if image[0]比depth新或同时
                 if ( image_queue.front()->header.stamp <= msg->header.stamp + match_thresh_d_i ) {
-                    //if 时间差不超过阈值
+                    //if 时间差不超过阈值 image[0]比depth没有新太多
                     dslam_sp::image_depth img_depth_msg;
                     img_depth_msg.image = *image_queue.front();
                     img_depth_msg.depth = *msg;
@@ -42,16 +43,17 @@ void depth_Callback(const sensor_msgs::Image::ConstPtr &msg)
                     cout <<  "img.stamp:" << img_depth_msg.image.header.stamp << "depth.stamp:" << img_depth_msg.depth.header.stamp << endl;
                     return;
                 } else {
-                    //时间差超过阈值
+                    //时间差超过阈值 image[0]比depth新太多，返回，等待最新的depth
                     return;
                 }
             } else {
-                // image[0]比depth早
+                // image[0]比depth早，扔掉image[0]，换一个新的image
                 image_queue.pop();
             }
         } else {
             //队列是空的
-            return;
+            cout << "image empty:" << endl;
+            ros::Duration(0.02).sleep();
         }
     }
                     
@@ -83,7 +85,9 @@ int main(int argc, char **argv)
     
     ros::Subscriber sub_image = n.subscribe("mynteye/left_rect/image_rect", 1, img_Callback);  //设置回调函数img_Callback
     ros::Subscriber sub_depth = n.subscribe("mynteye/depth/image_raw", 1, depth_Callback);
-    ros::spin(); //ros::spin()用于调用所有可触发的回调函数，将进入循环，不会返回，类似于在循环里反复调用spinOnce() 
+    ros::MultiThreadedSpinner spinner(2); // Use 2 threads
+    spinner.spin(); // spin() will not return until the node has been shutdown
+    //ros::spin(); //ros;::spin()用于调用所有可触发的回调函数，将进入循环，不会返回，类似于在循环里反复调用spinOnce() 
     //而ros::spinOnce()只会去触发一次
     return 0;
 }

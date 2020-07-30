@@ -1,34 +1,64 @@
 <launch>
 <arg name="robotid" default="3" />
+<arg name="datasetpath" default="/home/xuzhl/dataset/airsim/pic/robot_$(arg robotid)/" />
+<arg name="gemweightspath" default="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
 
   <node name="merge_img_depth_node" pkg="dslam_sp" type="merge_img_depth" args="-i $(arg robotid)" output="screen">
     <remap from="mynteye/left_rect/image_rect" to="airsim_node/car_1/front_left_custom/Scene" />
     <remap from="mynteye/depth/image_raw" to="airsim_node/car_1/front_left_custom/DepthPlanner" />
-    <remap from="merge/img_depth" to="merge/img_depth_file"/>
+    <remap from="merge/img_depth" to="/robot$(arg robotid)/merge/img_depth_file"/>
+  </node>
+
+  <node name="save_frame_file" pkg="dslam_sp" required="true" type="save_frame_file.py" args="-p $(arg datasetpath)" output="log">
+    <remap from="image_depth" to="/robot$(arg robotid)/merge/img_depth_file" />
   </node>
 
   <node name="sp_ORB" pkg="dslam_sp" required="true" type="orb_EF" output="screen">
-    <remap from="image" to="merge/img_depth_file" />
-    <remap from="/orb_EF/featurepoints_descriptors" to="orb_EF/featurepoints_descriptors" />
+    <remap from="image" to="/robot$(arg robotid)/merge/img_depth_file" />
+    <remap from="/orb_EF/featurepoints_descriptors" to="/robot$(arg robotid)/orb_EF/featurepoints_descriptors" />
     <remap from="/mynteye/left_rect/camera_info" to="/airsim_node/car_1/front_left_custom/Scene/camera_info" />
   </node>
 
   <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry_orb" output="screen">
-    <remap from="feature" to="orb_EF/featurepoints_descriptors" />
-    <remap from="/visual_odometry/transform_relative" to="visual_odometry/transform_relative" />
-    <remap from="/visual_odometry/transform_relative_with_image" to="visual_odometry/transform_relative_with_image" />
+    <remap from="feature" to="/robot$(arg robotid)/orb_EF/featurepoints_descriptors" />
+    <remap from="/visual_odometry/transform_relative" to="/robot$(arg robotid)/visual_odometry/transform_relative" />
+    <remap from="/visual_odometry/transform_relative_with_image" to="/robot$(arg robotid)/visual_odometry/transform_relative_with_image" />
   </node>
 
   <node name="gen_tf" pkg="dslam_sp" required="true" type="generate_track_multi_node.py" args ="-i $(arg robotid)" output="log">
-    <remap from="relpose" to="visual_odometry/transform_relative_with_image" />
-    <remap from="posearray" to="posearray" />
-    <remap from="looppose" to="looppose"/>
-    <remap from="/pose_with_image" to="pose_with_image"/>
+    <remap from="relpose" to="/robot$(arg robotid)/visual_odometry/transform_relative_with_image" />
+    <remap from="posearray" to="/robot$(arg robotid)/posearray" />
+    <remap from="looppose" to="/robot$(arg robotid)/looppose"/>
+    <remap from="/pose_with_image" to="/robot$(arg robotid)/pose_with_image"/>
+  </node>
+
+  <node name="gem_extract" pkg="dslam_sp" required="true" type="extract_feature_ros.py"  args="-w $(arg gemweightspath)" output="log" >
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
+    <remap from="/merge/img_depth_file" to="/robot$(arg robotid)/merge/img_depth_file" />
+  </node>
+
+  <node name="gem_receiver" pkg="dslam_sp" required="true" type="receiver_ros_multi.py" args=" -i $(arg robotid)" output="log">
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
+    <remap from="loopfnames" to="/robot$(arg robotid)/loopstring" />
+    <!-- <remap from="looppose" to="GEM_LOOPS" /> -->
+  </node>
+
+
+  <node name="loop_str_frames" pkg="dslam_sp" required="true" type="string2frame.py" args="-p $(arg datasetpath) -i $(arg robotid)" output="log">
+    <remap from="loopstring" to="/robot$(arg robotid)/loopstring" />
+    <remap from="loopframe" to="/robot$(arg robotid)/loopframe" />
+    
+  </node>
+
+  <node name="loop_frames" pkg="dslam_sp" required="true" type="vo_loop_frames_orb" output="screen">
+    <remap from="loopframes" to="/robot$(arg robotid)/loopframe" />
+    <remap from="VO_loop_relpose" to="/robot$(arg robotid)/looppose" />
+    <remap from="/mynteye/left_rect/camera_info" to="/airsim_node/car_1/front_left_custom/Scene/camera_info" />
   </node>
 
   <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
-    <remap from="data" to="pose_with_image" />
-    <remap from="/pointcloud_part_local" to="pointcloud_part_local" />
+    <remap from="data" to="/robot$(arg robotid)/pose_with_image" />
+    <remap from="/pointcloud_part_local" to="/robot$(arg robotid)/pointcloud_part_local" />
   </node>
 
   <node name="octomap_server" pkg="octomap_server" type="multi_octomap_server_node" output="log">
@@ -50,10 +80,10 @@
     <param name="pointcloud_min_z" value="-1000" />
 
     <!-- topic from where pointcloud2 messages are subscribed -->
-    <remap from="cloud_in" to="pointcloud_part_local" />
-    <remap from="octomap_in" to="octomap_in" />
-    <remap from="projected_map" to="projected_map" />
-    <remap from="octomap_binary" to="octomap_binary" />
+    <remap from="cloud_in" to="/robot$(arg robotid)/pointcloud_part_local" />
+    <remap from="octomap_in" to="/robot$(arg robotid)/octomap_in" />
+    <remap from="projected_map" to="/robot$(arg robotid)/projected_map" />
+    <remap from="octomap_binary" to="/robot$(arg robotid)/octomap_binary" />
  
   </node>
 

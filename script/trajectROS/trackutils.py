@@ -206,8 +206,10 @@ def StampedArray2PoseArray(posestamped_array, pose_array):
 
 def VOPoseArray2MapPoseArray(vo_pose_array, map_pose_array):
     init_pose = Pose()
-    init_pose.orientation.x = 0.7071
-    init_pose.orientation.w = 0.7071
+    init_pose.orientation.x = 0.5
+    init_pose.orientation.y = -0.5
+    init_pose.orientation.z = 0.5
+    init_pose.orientation.w = -0.5
     for pose in vo_pose_array.poses:
         map_pose_array.poses.append(posemath.toMsg( posemath.fromMsg( init_pose ) *  posemath.fromMsg( pose ) ))
         #2D# map_pose_array.poses[-1].position.z = 0

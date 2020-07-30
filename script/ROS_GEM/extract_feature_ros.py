@@ -49,7 +49,13 @@ def extract_vectors(net, images, transform):
 
 def extract_vectors_np(net, images, transform):
     net.cuda()
-    image3c = cv2.cvtColor(images, cv2.COLOR_GRAY2BGR)
+    if len(images.shape) > 2:
+        if images.shape[2] == 1:
+            image3c = cv2.cvtColor(images, cv2.COLOR_GRAY2BGR)
+        else:
+            image3c = images
+    elif len(images.shape) == 2:
+        image3c = cv2.cvtColor(images, cv2.COLOR_GRAY2BGR)
     img = Image.fromarray(image3c)
     v = net(transform(img).unsqueeze(0).cuda())
     vecs = v.cpu().data.squeeze()
@@ -138,7 +144,7 @@ def main(argv):
 def callback(data):
     # rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.image)
     global bridge,net,transform,representor_pub
-    cv_image = bridge.imgmsg_to_cv2(data.image, "mono8")
+    cv_image = bridge.imgmsg_to_cv2(data.image, "passthrough")
     # cv_depth = bridge.imgmsg_to_cv2(data.depth, "mono16")
     vecs = extract_vectors_np(net, cv_image, transform)
     # rospy.loginfo(rospy.get_caller_id() + "I heard %s", vecs)

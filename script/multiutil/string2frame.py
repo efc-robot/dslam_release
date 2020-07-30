@@ -48,14 +48,15 @@ def callback(msg):
         fileid1 = int(int(frameid1) % 1e8 )
         fileid2 = int(int(frameid2) % 1e8 )
         image1_name = "{filepath}/left_{fileid}.png".format(filepath = FileDir, fileid = fileid1)
-        image1 = cv2.imread ( image1_name, 2 )
+        image1 = cv2.imread ( image1_name, -1 )
         depth1_name = "{filepath}/depth_{fileid}.png".format(filepath = FileDir, fileid = fileid1)
-        depth1 = cv2.imread ( depth1_name, 2 )
+        depth1 = cv2.imread ( depth1_name, -1 )
 
         image2_name = "{filepath}/left_{fileid}.png".format(filepath = FileDir, fileid = fileid2)
-        image2 = cv2.imread ( image2_name, 2 )
+        image2 = cv2.imread ( image2_name, -1 )
         depth2_name = "{filepath}/depth_{fileid}.png".format(filepath = FileDir, fileid = fileid2)
-        depth2 = cv2.imread ( depth2_name, 2 )
+        depth2 = cv2.imread ( depth2_name, -1 )
+        # print("depth2.shape"+str(depth2.shape))
 
         publishMsg = MatchedFrame()
         publishMsg.frame1.header.frame_id = frameid1 #先来的
@@ -63,12 +64,14 @@ def callback(msg):
 
 
         tpm1 = 0
+        # print("depth2")
+        # print(depth2)
+        # print("depth2 end")
+        publishMsg.frame1.image = bridge.cv2_to_imgmsg(image1, "passthrough")
+        publishMsg.frame1.depth = bridge.cv2_to_imgmsg(depth1, "passthrough")
 
-        publishMsg.frame1.image = bridge.cv2_to_imgmsg(image1, "mono8")
-        publishMsg.frame1.depth = bridge.cv2_to_imgmsg(depth1, "mono16")
-
-        publishMsg.frame2.image = bridge.cv2_to_imgmsg(image2, "mono8")
-        publishMsg.frame2.depth = bridge.cv2_to_imgmsg(depth2, "mono16")
+        publishMsg.frame2.image = bridge.cv2_to_imgmsg(image2, "passthrough")
+        publishMsg.frame2.depth = bridge.cv2_to_imgmsg(depth2, "passthrough")
 
         looptrans_frames_pub.publish(publishMsg)
     else : # 是不同的两个机器人
@@ -82,11 +85,11 @@ def callback(msg):
         interframesMsg.frameid2 = frameid2 #对方的
         fileid1 = int(int(frameid1) % 1e8 ) #自己的
         image1_name = "{filepath}/left_{fileid}.png".format(filepath = FileDir, fileid = fileid1)
-        image1 = cv2.imread ( image1_name, 2 )
+        image1 = cv2.imread ( image1_name, -1 )
         depth1_name = "{filepath}/depth_{fileid}.png".format(filepath = FileDir, fileid = fileid1)
-        depth1 = cv2.imread ( depth1_name, 2 )
-        interframesMsg.frame1.image = bridge.cv2_to_imgmsg(image1, "mono8")
-        interframesMsg.frame1.depth = bridge.cv2_to_imgmsg(depth1, "mono16")
+        depth1 = cv2.imread ( depth1_name, -1 )
+        interframesMsg.frame1.image = bridge.cv2_to_imgmsg(image1, "passthrough")
+        interframesMsg.frame1.depth = bridge.cv2_to_imgmsg(depth1, "passthrough")
         interframesMsg.frame1.header.frame_id = frameid1
 
         # rospy.wait_for_service('/robot{}/posearray_srv'.format(self_ID) )
@@ -112,16 +115,16 @@ def intercallback(msg):
     if(robotid2 == self_ID):
         fileid2 = int(int(frameid2) % 1e8 )      
         image2_name = "{filepath}/left_{fileid}.png".format(filepath = FileDir, fileid = fileid2)
-        image2 = cv2.imread ( image2_name, 2 )
+        image2 = cv2.imread ( image2_name, -1 )
         depth2_name = "{filepath}/depth_{fileid}.png".format(filepath = FileDir, fileid = fileid2)
-        depth2 = cv2.imread ( depth2_name, 2 )
+        depth2 = cv2.imread ( depth2_name, -1 )
 
         publishMsg = MatchedFrame()
         publishMsg.frame1 = msg.frame1 #对方的，和发送端相反
         publishMsg.frame2.header.frame_id = frameid2 #自己的，和发送端相反
         
-        publishMsg.frame2.image = bridge.cv2_to_imgmsg(image2, "mono8")
-        publishMsg.frame2.depth = bridge.cv2_to_imgmsg(depth2, "mono16")
+        publishMsg.frame2.image = bridge.cv2_to_imgmsg(image2, "passthrough")
+        publishMsg.frame2.depth = bridge.cv2_to_imgmsg(depth2, "passthrough")
 
         looptrans_frames_pub.publish(publishMsg)
 

@@ -53,6 +53,66 @@ count_save = 0
 
 self_trans_queue = queue.Queue(maxsize=100)
 
+def strip_leading_slash(s):
+    return s[1:] if s.startswith("/") else s
+
+def publish_tf_to_tree(tf_msg, var_frame_id, var_child_frame_id):
+    global br, listener
+    print("start publish tf")
+    listener.waitForTransform(var_frame_id, tf_msg.header.frame_id, rospy.Time(), rospy.Duration(4.0))
+    listener.waitForTransform(tf_msg.child_frame_id, var_child_frame_id, rospy.Time(), rospy.Duration(4.0))
+    frame_tf_msg = listener._buffer.lookup_transform(strip_leading_slash(var_frame_id), strip_leading_slash(tf_msg.header.frame_id), rospy.Time(0))
+    child_frame_tf_msg = listener._buffer.lookup_transform(strip_leading_slash(tf_msg.child_frame_id), strip_leading_slash(var_child_frame_id), rospy.Time(0))
+    print("frame_tf_msg:"+str(frame_tf_msg))
+    print("child_frame_tf_msg:"+str(child_frame_tf_msg))
+    frame_tf = posemath.fromMsg(trackutils.trans2pose(frame_tf_msg.transform))
+    print("frame_tf:"+str(frame_tf))
+    child_frame_tf = posemath.fromMsg(trackutils.trans2pose(child_frame_tf_msg.transform))
+    print("child_frame_tf:"+str(child_frame_tf))
+    tf_kdl = posemath.fromMsg(trackutils.trans2pose(tf_msg.transform))
+    print("tf_kdl:"+str(tf_kdl))
+    tf_msg.transform = trackutils.pose2trans(posemath.toMsg( frame_tf * tf_kdl * child_frame_tf ))
+    tf_msg.header.stamp = tf_msg.header.stamp
+    tf_msg.header.frame_id = var_frame_id
+    tf_msg.child_frame_id = var_child_frame_id
+    print("publish:"+str(tf_msg))
+    br.sendTransformMessage(tf_msg)
+
+def maintain_tf_tree(odom_to_scene_before=None, odom_to_scene_after=None):
+    global br, listener, self_ID
+    base_to_scene = TransformStamped()
+    base_to_scene.transform = trackutils.pose2trans(posemath.toMsg(kdl.Frame(kdl.Rotation.Quaternion(x=0.5, y=-0.5, z=0.5, w=-0.5))))
+    base_to_scene.header.stamp = rospy.Time.now()
+    base_to_scene.header.frame_id = "base_link{}".format(self_ID)
+    base_to_scene.child_frame_id = "scene{}".format(self_ID)
+    br.sendTransformMessage(base_to_scene)
+
+    if odom_to_scene_before==None or odom_to_scene_after==None:
+        map_to_odom = TransformStamped()
+        map_to_odom.header.stamp = rospy.Time.now()
+        map_to_odom.transform.rotation.w = 1.
+        map_to_odom.header.frame_id = "/map{}".format(self_ID)
+        map_to_odom.child_frame_id = "/odom{}".format(self_ID)
+        print(map_to_odom)
+        br.sendTransformMessage(map_to_odom) #发送map和odom的TF树
+    elif odom_to_scene_before==odom_to_scene_after:
+        listener.waitForTransform("map{}".format(self_ID), "odom{}".format(self_ID), rospy.Time(), rospy.Duration(4.0))
+        map_to_odom = listener._buffer.lookup_transform("map{}".format(self_ID), "odom{}".format(self_ID), rospy.Time(0))
+        map_to_odom.header.stamp = rospy.Time.now()
+        br.sendTransformMessage(map_to_odom) #发送map和odom的TF树
+    else:
+        listener.waitForTransform("map{}".format(self_ID), "odom{}".format(self_ID), rospy.Time(), rospy.Duration(4.0))
+        map_to_odom = listener._buffer.lookup_transform("map{}".format(self_ID), "odom{}".format(self_ID), rospy.Time(0))
+        map_to_odom.header.stamp = rospy.Time.now()
+        map_to_odom_kdl = posemath.fromMsg(trackutils.trans2pose(map_to_odom.transform))
+        init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.5, y=-0.5, z=0.5, w=-0.5))
+        odom_to_scene_after_kdl = init_pose * posemath.fromMsg(odom_to_scene_after)
+        odom_to_scene_before_kdl = init_pose * posemath.fromMsg(odom_to_scene_before)
+        map_to_odom_kdl = map_to_odom_kdl * odom_to_scene_before_kdl * odom_to_scene_after_kdl.Inverse()
+        map_to_odom.transform = trackutils.pose2trans(posemath.toMsg(map_to_odom_kdl))
+        br.sendTransformMessage(map_to_odom) #发送map和odom的TF树
+
+
 def self_track_pose_cb(data):
     global self_ID, self_transArray, poseStampedArray_sets, poseStampedArray_locks, posearray_pub,self_trans_queue
     self_trans_queue.put(data)
@@ -77,7 +137,7 @@ def process_self():
             vo_posearray = PoseArray()
             map_posearray = PoseArray()
             map_posearray.header.stamp = data.TF.header.stamp
-            map_posearray.header.frame_id = "map{}".format(self_ID)
+            map_posearray.header.frame_id = "odom{}".format(self_ID)
 
             poseStampedArray_locks[ str(current_robot_id ) ].acquire()
             trackutils.StampedArray2PoseArray(poseStampedArray_sets[ str(current_robot_id ) ], vo_posearray)
@@ -87,7 +147,7 @@ def process_self():
 
             pose_with_image = Pose_with_image()
             pose_with_image.header.stamp = data.TF.header.stamp
-            pose_with_image.header.frame_id = "/odom{}".format(self_ID)
+            pose_with_image.header.frame_id = "/scene{}".format(self_ID)
             pose_with_image.pose = map_posearray.poses[-1]
             pose_with_image.image = data.image
             pose_with_image.depth = data.depth
@@ -96,12 +156,16 @@ def process_self():
 
             tf_msg = TransformStamped()
             tf_msg.header.stamp = data.TF.header.stamp
-            tf_msg.header.frame_id = "/map{}".format(self_ID)
-            tf_msg.child_frame_id = "/odom{}".format(self_ID)
-            tf_msg.transform.translation = map_posearray.poses[-1].position
-            tf_msg.transform.rotation = map_posearray.poses[-1].orientation
+            tf_msg.header.frame_id = "/odom{}".format(self_ID)
+            tf_msg.child_frame_id = "/scene{}".format(self_ID)
+            tf_msg.transform = trackutils.pose2trans(map_posearray.poses[-1])
+            # tf_msg.transform.translation = map_posearray.poses[-1].position
+            # tf_msg.transform.rotation = map_posearray.poses[-1].orientation
             print(tf_msg)
-            br.sendTransformMessage(tf_msg) #发送map和odom的TF树
+            # br.sendTransformMessage(tf_msg)
+            publish_tf_to_tree(tf_msg, "/odom{}".format(self_ID), "/base_link{}".format(self_ID))
+
+            maintain_tf_tree(1, 1)
 
             # for robot_id in poseStampedArray_sets.keys(): #发送多个机器人第一帧之间的TF树
             #     if ( int(robot_id) < self_ID):
@@ -197,19 +261,29 @@ def BackendThread():
                 tranStampedArray_sets[key] = transarray_result.transarray
                 tranStampedArray_locks[key].release()
 
-
+        SelfLastPoseBeforeOpt = None
+        SelfLastPoseAfterOpt = None
         if (not BackendRunning) and (NewLoop):
             BackendRunning = True
             NewLoop = False
+            poseStampedArray_locks[str(self_ID)].acquire()
+            LastIndex = len(poseStampedArray_sets[str(self_ID)].poseArray)
+            SelfLastPoseBeforeOpt = poseStampedArray_sets[str(self_ID)].poseArray[LastIndex-1].pose
+            poseStampedArray_locks[str(self_ID)].release()
             BackendOpt() #这里面可能把NewLoop设置为True。主要是应对，回环已经检测到了，但是轨迹还没有来得及更新到的情况。
+            poseStampedArray_locks[str(self_ID)].acquire()
+            SelfLastPoseAfterOpt = poseStampedArray_sets[str(self_ID)].poseArray[LastIndex-1].pose
+            poseStampedArray_locks[str(self_ID)].release()
+
             BackendRunning = False
 
+        maintain_tf_tree(SelfLastPoseBeforeOpt, SelfLastPoseAfterOpt)
         for robot_id in poseStampedArray_sets.keys(): #发送多个机器人第一帧之间的TF树
             if ( int(robot_id) < self_ID):
                 print("start")
                 tf_msg = TransformStamped()
-                tf_msg.header.frame_id = "/map{}".format(self_ID)
-                tf_msg.child_frame_id = "/map{}".format(robot_id)
+                tf_msg.header.frame_id = "/odom{}".format(self_ID)
+                tf_msg.child_frame_id = "/odom{}".format(robot_id)
                 
                 print("read map" + robot_id)
                 poseStampedArray_locks[ robot_id ].acquire()
@@ -219,17 +293,19 @@ def BackendThread():
                 poseStampedArray_locks[robot_id].release()
                 
                 print("create init_pose")
-                init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.7071, y=0, z=0, w=0.7071))
+                init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.5, y=-0.5, z=0.5, w=-0.5))
                 print("init_pose:" + str(init_pose))
                 pose_map1 = init_pose * pose_map1 * init_pose.Inverse()
-                tf_msg.transform.translation = posemath.toMsg(pose_map1).position
-                tf_msg.transform.rotation = posemath.toMsg(pose_map1).orientation
+                tf_msg.transform = trackutils.pose2trans(posemath.toMsg(pose_map1))
+                # tf_msg.transform.translation = posemath.toMsg(pose_map1).position
+                # tf_msg.transform.rotation = posemath.toMsg(pose_map1).orientation
                 #2D# tf_msg.transform.translation.z = 0
                 #2D# tf_msg.transform.rotation.x = 0
                 #2D# tf_msg.transform.rotation.y = 0
                 #2D# tf_msg.transform.rotation.z = pow(1-pow(tf_msg.transform.rotation.w, 2), 0.5) * tf_msg.transform.rotation.z / abs(tf_msg.transform.rotation.z)
                 print(tf_msg)
-                br.sendTransformMessage(tf_msg)
+                # br.sendTransformMessage(tf_msg)
+                publish_tf_to_tree(tf_msg, "/map{}".format(self_ID), "/map{}".format(robot_id))
 
             if not published_map.has_key(robot_id) and not (int(robot_id) == self_ID) and withmap:
                 print ("start wait_for_service " + '/robot{}/octomap_binary'.format(robot_id))
@@ -446,7 +522,7 @@ def intertranscallback(msg):
 
 
 def main(argv):
-    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub, map_pub, withmap
+    global posearray_pub,self_ID,tranStampedArray_sets,poseStampedArray_sets,poseStampedArray_locks,LooptransArray_sets,LooptransArray_locks,posearray_pub_test,pose_with_image_pub, map_pub, withmap, br, listener
     opts, args = getopt.getopt(argv,"i:t")
     for opt, arg in opts:
         if opt in ("-i"):
@@ -475,6 +551,11 @@ def main(argv):
     posearray_pub_test = rospy.Publisher("/robot{}/posearray_test".format(self_ID), PoseArray, queue_size=3)
     pose_with_image_pub = rospy.Publisher("pose_with_image", Pose_with_image, queue_size=3)
     map_pub = rospy.Publisher("/robot{}/octomap_in".format(self_ID), Octomap, queue_size=3)
+
+    listener = tf.TransformListener()
+
+    maintain_tf_tree()
+
     backt = threading.Thread(target=BackendThread)
     self_tran_t = threading.Thread(target=process_self)
     backt.setDaemon(True)

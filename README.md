@@ -55,3 +55,8 @@ roslaunch dslam_sp ORB_VO_file_loop.launch
 ```
 
 注意修改 launch file 中的路径。
+
+## 待调bug（feature work）
+1. rgbd2pointcloud节点可以放在前面，merge_img_depth_node之后，中间的数据通路可以删除掉image信息
+2. FeatureExtract节点的输出descriptor可以直接用sensor_msgs/Image的数据类型来传输
+3. VO_loop节点内部的descriptor不需要从mat转成msg再转回mat

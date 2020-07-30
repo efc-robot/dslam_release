@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 <launch>
 
-<group ns="robot3">
+<!-- <group ns="robot3">
     <include file="$(find dslam_sp)/launch/includes/single.launch.xml">
     <arg name="robotid" value="3"/>
     <arg name="framestart" value="1"/>
     <arg name="frameend" value="300" />
     </include>
-</group>
+</group> -->
 
 <group ns="robot4">
     <include file="$(find dslam_sp)/launch/includes/single.launch.xml">
     <arg name="robotid" value="4"/>
     <arg name="framestart" value="1"/>
-    <arg name="frameend" value="1600" />
+    <arg name="frameend" value="2800" />
     </include>
 </group>
 
