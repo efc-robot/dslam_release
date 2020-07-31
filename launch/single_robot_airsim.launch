@@ -3,7 +3,7 @@
 <arg name="datasetpath" default="/home/xuzhl/dataset/airsim/pic/robot_$(arg robotid)/" />
 <arg name="gemweightspath" default="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
 
-  <node name="merge_img_depth_node" pkg="dslam_sp" type="merge_img_depth" args="-i $(arg robotid)" output="screen">
+  <node name="merge_img_depth_node" pkg="dslam_sp" required="true" type="merge_img_depth" args="-i $(arg robotid)" output="log">
     <remap from="mynteye/left_rect/image_rect" to="airsim_node/car_1/front_left_custom/Scene" />
     <remap from="mynteye/depth/image_raw" to="airsim_node/car_1/front_left_custom/DepthPlanner" />
     <remap from="merge/img_depth" to="/robot$(arg robotid)/merge/img_depth_file"/>
@@ -19,7 +19,7 @@
     <remap from="/mynteye/left_rect/camera_info" to="/airsim_node/car_1/front_left_custom/Scene/camera_info" />
   </node>
 
-  <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry_orb" output="screen">
+  <node name="vo" pkg="dslam_sp" required="true" type="visual_odometry_orb" output="log">
     <remap from="feature" to="/robot$(arg robotid)/orb_EF/featurepoints_descriptors" />
     <remap from="/visual_odometry/transform_relative" to="/robot$(arg robotid)/visual_odometry/transform_relative" />
     <remap from="/visual_odometry/transform_relative_with_image" to="/robot$(arg robotid)/visual_odometry/transform_relative_with_image" />

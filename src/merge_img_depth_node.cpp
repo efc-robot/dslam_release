@@ -16,6 +16,10 @@ void img_Callback(const sensor_msgs::Image::ConstPtr &msg)
 {  
     //Convert to OpenCV native BGR color
     cout << "img.stamp:" << msg->header.stamp << endl;
+    if (msg->width==0 || msg->height==0){
+        cout << "image.width:" << msg->width << " image.height:" << msg->height << endl;
+        return;
+    }
     
     image_queue.push(msg);
 }
@@ -24,6 +28,10 @@ void depth_Callback(const sensor_msgs::Image::ConstPtr &msg)
 {  
     //Convert to OpenCV native BGR color
     cout << "depth.stamp:" << msg->header.stamp << endl;
+    if (msg->width==0 || msg->height==0){
+        cout << "depth.width:" << msg->width << " depth.height" << msg->height << endl;
+        return;
+    }
     
     ros::Duration match_thresh_i_d(0.1);
     ros::Duration match_thresh_d_i(0.4);

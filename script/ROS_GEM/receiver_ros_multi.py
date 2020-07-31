@@ -60,7 +60,21 @@ def loop_callback(data):
         representor_frameIDs[str(current_robot_id)] = []
         matched_frames[str(current_robot_id)] = set()
     representors_locks[str(current_robot_id)].acquire()
-    representors_record[str(current_robot_id)] = np.vstack(( representors_record[str(current_robot_id)] , np.array(representor) ) )
+    if len(representors_record[str(current_robot_id)]) == 0:
+        representors_record[str(current_robot_id)] = np.vstack(( representors_record[str(current_robot_id)] , np.array(representor) ) )
+    else:
+        last_keyframe_rep = representors_record[str(current_robot_id)][-1]
+        print("np.matmul(representor, last_keyframe_rep)")
+        print(np.matmul(representor, last_keyframe_rep))
+        print("np.matmul")
+        if np.matmul(representor, last_keyframe_rep) < 0.95:
+            representors_record[str(current_robot_id)] = np.vstack(( representors_record[str(current_robot_id)] , np.array(representor) ) )
+        else:
+            representors_locks[str(current_robot_id)].release()
+            return
+    
+        
+    
     representors_locks[str(current_robot_id)].release()
     
     #记录对应帧ID
@@ -77,14 +91,14 @@ def loop_callback(data):
 
         for robot_id, representor_id_record in matchresults.items():
             if int(robot_id) == self_ID : #自己和自己比
-                if len(matchresults[robot_id] > 30):
-                    validresults = matchresults[robot_id][0:-30]
+                if len(matchresults[robot_id] > 5):
+                    validresults = matchresults[robot_id][0:-5]
                     validmatch = validresults>0.95
                     if ( validmatch.any() ):
                         maxargs = np.argmax(validresults)
 
                         matchpair = "{id1} {id2}".format(id1 = representor_frameIDs[robot_id][maxargs], id2 = imageFrameID)
-                        print (matchpair)
+                        print ("matchpair: " + matchpair)
                         match_loop_pub.publish(matchpair) # to publish rel fnames  
             else : #新进来的帧和之前别人的图片能够匹配
                 if len(matchresults[robot_id] > 1):
@@ -95,7 +109,7 @@ def loop_callback(data):
                         print(int(imageFrameID) )
                         if not ( int(imageFrameID) in matched_frames[str(robot_id)]):
                             matchpair = "{id1} {id2}".format(id1 = imageFrameID, id2 = representor_frameIDs[robot_id][maxargs])
-                            print (matchpair)
+                            print ("matchpair: " + matchpair)
                             match_loop_pub.publish(matchpair) # to publish rel fnames  
                             matched_frames[str(robot_id)] = matched_frames[str(robot_id)].union(set(range(max(0,int(imageFrameID) - 40 ), int(imageFrameID)+40  )))
     else : # 不是自己的图片，就只和自己进行比较
@@ -110,7 +124,7 @@ def loop_callback(data):
                 print(representor_frameIDs[str(self_ID)][maxargs])
                 if not ( int(representor_frameIDs[str(self_ID)][maxargs]) in matched_frames[str(current_robot_id)]):
                     matchpair = "{id1} {id2}".format(id1 = representor_frameIDs[str(self_ID)][maxargs], id2 = imageFrameID)
-                    print (matchpair)
+                    print ("matchpair: " + matchpair)
                     match_loop_pub.publish(matchpair) # to publish rel fnames  
                     matched_frames[str(current_robot_id)] = matched_frames[str(current_robot_id)].union(set(range(max(0,int(representor_frameIDs[str(self_ID)][maxargs]) - 40 ), int(representor_frameIDs[str(self_ID)][maxargs])+40  )))
 

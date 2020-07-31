@@ -56,10 +56,16 @@ def extract_vectors_np(net, images, transform):
             image3c = images
     elif len(images.shape) == 2:
         image3c = cv2.cvtColor(images, cv2.COLOR_GRAY2BGR)
-    img = Image.fromarray(image3c)
+    try:
+        img = Image.fromarray(image3c)
+    except Exception as e:
+        print("image3c")
+        print(e)
+        print(image3c)
+        return False, None
     v = net(transform(img).unsqueeze(0).cuda())
     vecs = v.cpu().data.squeeze()
-    return vecs
+    return True, vecs
 
 class GeM(nn.Module):
     def __init__(self, eps=1e-6):
@@ -146,7 +152,9 @@ def callback(data):
     global bridge,net,transform,representor_pub
     cv_image = bridge.imgmsg_to_cv2(data.image, "passthrough")
     # cv_depth = bridge.imgmsg_to_cv2(data.depth, "mono16")
-    vecs = extract_vectors_np(net, cv_image, transform)
+    IFsuccess, vecs = extract_vectors_np(net, cv_image, transform)
+    if not IFsuccess:
+        return
     # rospy.loginfo(rospy.get_caller_id() + "I heard %s", vecs)
     # cv2.imshow("name", cv_image)
     # cv2.imshow("depth", cv_depth)
