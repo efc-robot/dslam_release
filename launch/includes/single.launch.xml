@@ -29,6 +29,8 @@
     <remap from="posearray" to="posearray" />
     <remap from="looppose" to="looppose"/>
     <remap from="/pose_with_image" to="pose_with_image"/>
+    <remap from="get_keyframe" to="get_keyframe" />
+    <remap from="allRobotTransArraywithMap" to="TranswithSubMap" />
   </node>
 
 
@@ -55,12 +57,45 @@
     <remap from="VO_loop_relpose" to="looppose" />
   </node>
 
-  <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
-    <remap from="data" to="pose_with_image" />
-    <remap from="/pointcloud_part_local" to="/pointcloud_part_local" />
+  <node name="key_frame" pkg="dslam_sp" required="true" type="key_frame_list.py" args=" -i $(arg robotid)" output="log">
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
+    <remap from="keyframe_srv" to="get_keyframe" />
   </node>
 
-  <node name="octomap_server" pkg="octomap_server" type="multi_octomap_server_node" output="log">
+  <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
+    <remap from="data" to="pose_with_image" />
+    <remap from="pointcloud_part_local" to="pointcloud_part_local" />
+    <remap from="pointcloud_part_local_forGlobalMap" to="/pointcloud_part_local_forGlobalMap" />
+    
+  </node>
+
+  <node name="sub_octomap_server" pkg="octomap_server" required="true" type="sub_octomap_server_node" output="log">
+
+    <!-- resolution in meters per pixel -->
+    <param name="resolution" value="0.25" />
+
+    <!-- name of the fixed frame, needs to be "/map" for SLAM -->
+    <param name="frame_id" type="string" value="/keyframe$(arg robotid)" />
+
+    <!-- max range / depth resolution of the kinect in meter -->
+    <param name="sensor_model/max_range" value="100.0" />
+    <param name="latch" value="true" />
+
+    <!-- <param name="filter_ground" value="true" /> -->
+
+    <!-- max/min height for occupancy map, should be in meters -->
+    <param name="pointcloud_max_z" value="1000" />
+    <param name="pointcloud_min_z" value="-1000" />
+
+    <!-- topic from where pointcloud2 messages are subscribed -->
+    <remap from="cloud_in" to="pointcloud_part_local" />
+    <remap from="keyframe_pose" to="keyframe_pose" />
+    <remap from="projected_map" to="sub_projected_map" />
+    <remap from="octomap_binary" to="sub_octomap_binary" />
+ 
+  </node>
+
+  <node name="global_octomap_server" pkg="octomap_server" required="true" type="global_multi_octomap_server_node" output="log">
 
     <!-- resolution in meters per pixel -->
     <param name="resolution" value="0.25" />
@@ -79,11 +114,11 @@
     <param name="pointcloud_min_z" value="-1000" />
 
     <!-- topic from where pointcloud2 messages are subscribed -->
-    <remap from="cloud_in" to="/pointcloud_part_local" />
+    <remap from="cloud_in" to="/pointcloud_part_local_forGlobalMap" />
     <remap from="octomap_in" to="octomap_in" />
     <remap from="projected_map" to="projected_map" />
     <remap from="octomap_binary" to="octomap_binary" />
- 
+    <remap from="TranswithSubMap" to="TranswithSubMap" />
   </node>
 
 </launch>

@@ -28,7 +28,7 @@
 
 using namespace std;
 
-ros::Publisher pub;
+ros::Publisher pub,pub2;
 
 void Callback(const dslam_sp::Pose_with_image::ConstPtr &msg)
 {
@@ -86,6 +86,7 @@ void Callback(const dslam_sp::Pose_with_image::ConstPtr &msg)
     pcl::toROSMsg(cloud, output);
     output.header = msg->header;
     pub.publish(output);
+    pub2.publish(output);
 }
 
 int main( int argc, char** argv )
@@ -93,7 +94,8 @@ int main( int argc, char** argv )
     ros::init(argc, argv, "rgbd2pointcloud");
     ros::NodeHandle nh;
 
-    pub = nh.advertise<sensor_msgs::PointCloud2>("/pointcloud_part_local", 3); //创建publisher，往话题上发布消息
+    pub = nh.advertise<sensor_msgs::PointCloud2>("pointcloud_part_local", 3); //创建publisher，往话题上发布消息
+    pub2 = nh.advertise<sensor_msgs::PointCloud2>("pointcloud_part_local_forGlobalMap", 3); //创建publisher，往话题上发布消息
 
     if (ros::names::remap("data") == "data") {
         ROS_WARN("rgbd2octomap Topic 'data' has not been remapped! ");

@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import os
 import rospy
+import PyKDL as kdl
 from tf_conversions import posemath
 from dslam_sp.msg import image_depth, PRrepresentor, TransformStampedArray, PoseStampedArray
 import tf2_ros
@@ -153,6 +154,16 @@ def pose2trans(pose):
     trans.rotation = pose.orientation
     trans.translation =pose.position
     return trans
+
+def poseStampedArray2transStampedArray(poseStampedArray):
+    transStampedArray = TransformStampedArray()
+    transStampedArray.header = poseStampedArray.header
+    for poseStamped in poseStampedArray.poseArray:
+        transStamped = TransformStamped()
+        transStamped.header = poseStamped.header
+        transStamped.transform = pose2trans(poseStamped.pose)
+        transStampedArray.transformArray.append(transStamped)
+    return transStampedArray
 
 def Transarray2G2O(g2ofname, trans_array):
     index = 1
@@ -489,10 +500,23 @@ def LoopPosearrayInitpose(transformstamped, posestampedarray_src, posestampedarr
 
     return posemath.toMsg(trans_r1_r2_f1_f1)
 
-def RotatePoserray(init_pose, posestampedarray):
+def RotatePosearray(init_pose, posestampedarray):
     for index,posestamped in enumerate(posestampedarray.poseArray):
         posestampedarray.poseArray[index].pose = posemath.toMsg(posemath.fromMsg(init_pose)*posemath.fromMsg(posestamped.pose))
     return posestampedarray
+
+def RotatePosearray2Map(posestampedarray):
+    init_pose = kdl.Frame(kdl.Rotation.Quaternion(x=0.5, y=-0.5, z=0.5, w=-0.5))
+    for index,posestamped in enumerate(posestampedarray.poseArray):
+        posestampedarray.poseArray[index].pose = posemath.toMsg(init_pose*posemath.fromMsg(posestamped.pose)*init_pose.Inverse())
+    return posestampedarray
+
+def findPoseStampedInPoseStampedArray(posestampedarray, frameID):
+    for posestamped in list(reversed(posestampedarray.poseArray)):
+        if posestamped.header.frame_id == frameID :
+            return posestamped
+    return None
+
 
 def valid_loop(poseStampedArray_sets, tranStampedArray ):
     valid_loop_array = TransformStampedArray()
@@ -530,7 +554,7 @@ if __name__ == '__main__':
                 posearray_target = PoseStampedArray()
                 AccReltrans2PoseStampedArray(tranStampedArray_sets[key],posearray_target)
                 target_init_pose = LoopPosearrayInitpose(LooptransArray_sets[key].transformArray[0], poseStampedArray_sets[str(self_ID)], posearray_target)
-                poseStampedArray_sets[key] = RotatePoserray(target_init_pose, posearray_target)
+                poseStampedArray_sets[key] = RotatePosearray(target_init_pose, posearray_target)
                 valid_loop_array = valid_loop(poseStampedArray_sets, looparray)
                 if len(valid_loop_array.transformArray) > 0:
                     PoseStampedarray2G2O(g2ofilename,poseStampedArray_sets[key], True )
@@ -562,7 +586,7 @@ if __name__ == '__main__':
     # target_init_pose = LoopPosearrayInitpose(LooptransArray_sets["2"].transformArray[0], poseStampedArray_sets["1"], posearray_target)
     # # if poseStampedArray_sets.has_key("2"):
     # #     poseStampedArray_sets["2"] = None
-    # poseStampedArray_sets["2"] = RotatePoserray(target_init_pose, posearray_target)
+    # poseStampedArray_sets["2"] = RotatePosearray(target_init_pose, posearray_target)
 
     # PoseStampedarray2G2O("/tmp/g2o_robot{}.g2o".format(self_ID),poseStampedArray_sets[str(self_ID)], False )
     # PoseStampedarray2G2O("/tmp/g2o_robot{}.g2o".format(self_ID),poseStampedArray_sets["2"], True )

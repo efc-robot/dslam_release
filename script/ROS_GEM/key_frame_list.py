@@ -3,7 +3,7 @@
 import numpy as np
 import rospy
 from dslam_sp.msg import PRrepresentor
-from dslam_sp.srv import keyframe_srv
+from dslam_sp.srv import *
 import threading
 import sys, getopt 
 
@@ -20,7 +20,7 @@ class Key_Frame:
         self.key_frame_representors = np.zeros((0,meta['outputdim']),dtype=float)
         self.key_frame_locks = threading.Lock()
         self.PR_sub = rospy.Subscriber("PRrepresentor", PRrepresentor, self.callback)
-        self.srvhandle = rospy.Service('keyframe_srv'.format(self_ID), keyframe_srv, self.handle_keyframe_srv)
+        self.srvhandle = rospy.Service('keyframe_srv', keyframe_srv, self.handle_keyframe_srv)
 
     def callback(self, data):
         imageHeader = data.imageHeader
@@ -34,23 +34,26 @@ class Key_Frame:
             if len(self.key_frame_ids) == 0:
                 self.key_frame_representors = np.vstack(( self.key_frame_representors , np.array(representor) ) )
                 self.key_frame_ids.append(imageFrameID)
+                print("key_frameID append: {}".format(imageFrameID))
             else:
                 last_keyframe_rep = self.key_frame_representors[-1]
-                print("np.matmul(representor, last_keyframe_rep)")
-                print(np.matmul(representor, last_keyframe_rep))
-                print("np.matmul")
-                if np.matmul(representor, last_keyframe_rep) < 0.95:
+                print("np.matmul(representor, last_keyframe_rep):"+str(np.matmul(representor, last_keyframe_rep)))
+                if np.matmul(representor, last_keyframe_rep) < 0.94:
                     self.key_frame_representors = np.vstack(( self.key_frame_representors , np.array(representor) ) )
                     self.key_frame_ids.append(imageFrameID)
+                    print("key_frameID append: {}".format(imageFrameID))
         self.key_frame_locks.release()
 
-    def handle_keyframe_srv(req):
+    def handle_keyframe_srv(self, req):
         ID_return = "None"
         print("frameID : {}".format(req.inputID))
         self.key_frame_locks.acquire()
-        for rep in reversed(self.key_frame_representors):
-            if int(rep)<=int(req.inputID):
-                ID_return = rep
+        if len(self.key_frame_ids)>0:
+            print("list(reversed(self.key_frame_ids)):"+str(list(reversed(self.key_frame_ids))))
+            for rep in list(reversed(self.key_frame_ids)):
+                if int(rep)<=int(req.inputID):
+                    ID_return = rep
+                    break
         self.key_frame_locks.release()
         print("key_frameID : {}".format(ID_return))
         return keyframe_srvResponse(ID_return)
@@ -66,6 +69,7 @@ def main(argv):
     
     rospy.init_node('key_frame', anonymous=True)
     kf = Key_Frame(self_ID)
+    print("keyframe start")
     rospy.spin()
 
 if __name__ == '__main__':

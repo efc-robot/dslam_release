@@ -100,6 +100,7 @@ add_service_files(
   FILES
   posearray_srv.srv
   transarray_srv.srv
+  keyframe_srv.srv
 )
 
 ## Generate actions in the 'action' folder
