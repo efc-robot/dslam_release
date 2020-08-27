@@ -10,10 +10,21 @@
 - 需要编译安装 g2o 仓库
     - 【重要】在安装 g2o 之前，需要先 sudo apt install libsuitesparse-dev。不然编译的库没法用
     - g2o 仓库地址 https://github.com/RainerKuemmerle/g2o.git
-- 编译安装图优化库 
+- 编译安装图优化库(可以安装4.0.3 tag版本）
     - https://github.com/borglab/gtsam.git
-    - 我们只在python中用到图优化，需要编译python wrap， 教程参考 https://github.com/borglab/gtsam/blob/develop/cython/README.md
+    - 我们只在python中用到图优化，需要编译python wrap， 教程参考 https://github.com/borglab/gtsam/cython/README.md
+- python2.7
+    - pip install torch
+    - pip install future
+    - pip install torchvision
+- OpenCV 3.2.0 + OpenCV Contrib 3.2.0 （高于opencv3.4.3.16之后由于版权原因SIFT无法使用，且会报错cv::Exception）
+- Eigen3
 
+## 修改内容
+- 修改CMakeLists.txt中的第9行：G2O_CMAKE_MODULES的路径为本机中<path_to_g2o>/g2o/cmake_modules/。
+- 修改所有的launch file中gemweightspath (gem.pth) 为本机中<path_to_DSLAM_one>/DSLAM_one/src/ROS-DSLAM/script/ROS_GEM/weights/gem.pth
+- 修改所有的launch file中datasetpath路径为本机<path_to_image_503_loop>/image_503_loop/pic
+- ros内 OpenCV 3.2.0如果通过编译安装，需要额外将安装好的头文件/usr/local/include/opencv*复制到/usr/include/下
 ## 编译使用
 
 - 切换到工作空间，并新建src文件家
