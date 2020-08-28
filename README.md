@@ -12,6 +12,7 @@
     - g2o 仓库地址 https://github.com/RainerKuemmerle/g2o.git
 - 编译安装图优化库(可以安装4.0.3 tag版本）
     - https://github.com/borglab/gtsam.git
+    (git clone --branch 4.0.3 https://github.com/borglab/gtsam.git)
     - 我们只在python中用到图优化，需要编译python wrap， 教程参考 https://github.com/borglab/gtsam/cython/README.md
 - python2.7
     - pip install torch
