@@ -1,0 +1,2 @@
+set(dslam_sp_MESSAGE_FILES "msg/image_depth.msg;msg/Point2f.msg;msg/KeyPoint.msg;msg/KeyPoints_vector.msg;msg/Descriptor.msg;msg/Descriptors_vector.msg;msg/EF_output.msg;msg/PRrepresentor.msg;msg/TransformStampedArray.msg;msg/TransformStamped_with_image.msg;msg/PoseStampedArray.msg;msg/Pose_with_image.msg;msg/MatchedFrame.msg;msg/InterMatch.msg;msg/MatchStamp.msg")
+set(dslam_sp_SERVICE_FILES "srv/posearray_srv.srv;srv/transarray_srv.srv;srv/keyframe_srv.srv")

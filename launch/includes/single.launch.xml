@@ -31,6 +31,7 @@
     <remap from="/pose_with_image" to="pose_with_image"/>
     <remap from="get_keyframe" to="get_keyframe" />
     <remap from="allRobotTransArraywithMap" to="TranswithSubMap" />
+    <remap from="keyframe_pose" to="keyframe_pose" />
   </node>
 
 

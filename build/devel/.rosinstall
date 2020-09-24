@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/xuzhl/catkin_ws_d/src/dslam_release/build/devel/setup.sh

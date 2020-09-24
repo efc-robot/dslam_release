@@ -14,7 +14,7 @@ class Frame_Saver:
     def __init__(self, FileDir):
         self.FileDir = Path(FileDir)
         if not self.FileDir.exists():
-            os.makedirs(self.FileDir)
+            os.makedirs(str(self.FileDir))
         #Subscriber函数第一个参数是topic的名称，第二个参数是接受的数据类型 第三个参数是回调函数的名称
         self.image_sub = rospy.Subscriber("image_depth", image_depth, self.callback)
         self.bridge = CvBridge()

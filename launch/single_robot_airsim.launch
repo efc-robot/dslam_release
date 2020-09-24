@@ -1,5 +1,5 @@
 <launch>
-<arg name="robotid" default="3" />
+<arg name="robotid" default="4" />
 <arg name="datasetpath" default="/home/xuzhl/dataset/airsim/pic/robot_$(arg robotid)/" />
 <arg name="gemweightspath" default="/home/xuzhl/catkin_ws_d/src/dslam_release/script/ROS_GEM/weights/gem.pth" />
 
@@ -30,6 +30,9 @@
     <remap from="posearray" to="/robot$(arg robotid)/posearray" />
     <remap from="looppose" to="/robot$(arg robotid)/looppose"/>
     <remap from="/pose_with_image" to="/robot$(arg robotid)/pose_with_image"/>
+    <remap from="get_keyframe" to="/robot$(arg robotid)/get_keyframe" />
+    <remap from="allRobotTransArraywithMap" to="/robot$(arg robotid)/TranswithSubMap" />
+    <remap from="keyframe_pose" to="/robot$(arg robotid)/keyframe_pose" />
   </node>
 
   <node name="gem_extract" pkg="dslam_sp" required="true" type="extract_feature_ros.py"  args="-w $(arg gemweightspath)" output="log" >
@@ -56,12 +59,44 @@
     <remap from="/mynteye/left_rect/camera_info" to="/airsim_node/car_1/front_left_custom/Scene/camera_info" />
   </node>
 
-  <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
-    <remap from="data" to="/robot$(arg robotid)/pose_with_image" />
-    <remap from="/pointcloud_part_local" to="/robot$(arg robotid)/pointcloud_part_local" />
+  <node name="key_frame" pkg="dslam_sp" required="true" type="key_frame_list.py" args=" -i $(arg robotid)" output="log">
+    <remap from="PRrepresentor" to="/GEM_PRrepresentor" />
+    <remap from="keyframe_srv" to="/robot$(arg robotid)/get_keyframe" />
   </node>
 
-  <node name="octomap_server" pkg="octomap_server" type="multi_octomap_server_node" output="log">
+  <node name="pointcloud" pkg="dslam_sp" required="true" type="rgbd2pointcloud" output="log">
+    <remap from="data" to="/robot$(arg robotid)/pose_with_image" />
+    <remap from="pointcloud_part_local" to="/robot$(arg robotid)/pointcloud_part_local" />
+    <remap from="pointcloud_part_local_forGlobalMap" to="/pointcloud_part_local_forGlobalMap" />
+  </node>
+
+  <node name="sub_octomap_server" pkg="octomap_server" required="true" type="sub_octomap_server_node" output="log">
+
+    <!-- resolution in meters per pixel -->
+    <param name="resolution" value="0.25" />
+
+    <!-- name of the fixed frame, needs to be "/map" for SLAM -->
+    <param name="frame_id" type="string" value="/keyframe$(arg robotid)" />
+
+    <!-- max range / depth resolution of the kinect in meter -->
+    <param name="sensor_model/max_range" value="100.0" />
+    <param name="latch" value="true" />
+
+    <!-- <param name="filter_ground" value="true" /> -->
+
+    <!-- max/min height for occupancy map, should be in meters -->
+    <param name="pointcloud_max_z" value="1000" />
+    <param name="pointcloud_min_z" value="-1000" />
+
+    <!-- topic from where pointcloud2 messages are subscribed -->
+    <remap from="cloud_in" to="/robot$(arg robotid)/pointcloud_part_local" />
+    <remap from="keyframe_pose" to="/robot$(arg robotid)/keyframe_pose" />
+    <remap from="projected_map" to="/robot$(arg robotid)/sub_projected_map" />
+    <remap from="octomap_binary" to="/robot$(arg robotid)/sub_octomap_binary" />
+ 
+  </node>
+
+  <node name="global_octomap_server" pkg="octomap_server" required="true" type="global_multi_octomap_server_node" output="log">
 
     <!-- resolution in meters per pixel -->
     <param name="resolution" value="0.25" />
@@ -80,11 +115,11 @@
     <param name="pointcloud_min_z" value="-1000" />
 
     <!-- topic from where pointcloud2 messages are subscribed -->
-    <remap from="cloud_in" to="/robot$(arg robotid)/pointcloud_part_local" />
+    <remap from="cloud_in" to="/pointcloud_part_local_forGlobalMap" />
     <remap from="octomap_in" to="/robot$(arg robotid)/octomap_in" />
     <remap from="projected_map" to="/robot$(arg robotid)/projected_map" />
     <remap from="octomap_binary" to="/robot$(arg robotid)/octomap_binary" />
- 
+    <remap from="TranswithSubMap" to="/robot$(arg robotid)/TranswithSubMap" />
   </node>
 
 </launch>

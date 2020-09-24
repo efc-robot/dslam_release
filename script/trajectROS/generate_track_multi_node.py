@@ -324,6 +324,7 @@ def BackendThread():
         submap_result = submap_client()
         allRobotTransStampedwithSubMap.submaps.extend(submap_result.submaps)
         print("add robot{} submap".format(robot_id) + str(len(submap_result.submaps)))
+        
       trackutils.RotatePosearray2Map(allRobotPoseStamped)
       print("Posearray to Maptf")
       allRobotTransStamped = trackutils.poseStampedArray2transStampedArray(allRobotPoseStamped)

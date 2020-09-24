@@ -93,6 +93,7 @@ add_message_files(
   Pose_with_image.msg
   MatchedFrame.msg
   InterMatch.msg
+  MatchStamp.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -201,10 +202,10 @@ add_executable(vo_loop_fnames_orb src/VO_loop_filenames_orb_orbh.cpp)
 add_executable(vo_loop_frames_orb src/VO_loop_frames_orb_orbh.cpp)
 ##SP## add_executable(superpoint_EF src/superpoint_EF_node.cpp)
 add_executable(orb_EF src/orb_EF_node_orbh.cpp)
-add_executable(sift_EF src/sift_EF_node.cpp)
+##SIFT## add_executable(sift_EF src/sift_EF_node.cpp)
 ##SP## add_executable(visual_odometry src/visual_odometry_node.cpp)
 add_executable(visual_odometry_orb src/visual_odometry_orb_node_orbh.cpp)
-add_executable(visual_odometry_sift src/visual_odometry_sift_node.cpp)
+##SIFT## add_executable(visual_odometry_sift src/visual_odometry_sift_node.cpp)
 add_executable(generate_track src/generate_track_node.cpp)
 add_executable(rgbd2octomap_ros src/rgbd2octomap_ros.cpp)
 add_executable(rgbd2pointcloud src/rgbd2pointcloud_ros.cpp)
@@ -221,7 +222,7 @@ add_dependencies(merge_img_depth ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 # add_dependencies(publish_sim ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(superpoint_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(orb_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(sift_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ ##SIFT## add_dependencies(sift_EF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(publish_merge ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(publish_merge_tum ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(vo_loop_fnames ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -229,7 +230,7 @@ add_dependencies(vo_loop_fnames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 add_dependencies(vo_loop_frames_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ##SP## add_dependencies(visual_odometry ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visual_odometry_orb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(visual_odometry_sift ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ ##SIFT## add_dependencies(visual_odometry_sift ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(generate_track ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rgbd2octomap_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rgbd2pointcloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -276,17 +277,17 @@ target_link_libraries(visual_odometry_orb
   ${OpenCV_LIBRARIES}
   ${G2O_LIBS}
 )
-target_link_libraries(sift_EF
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  ${GLOG_BOOST_LIBS}
-  ${G2O_LIBS}
-)
-target_link_libraries(visual_odometry_sift
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  ${G2O_LIBS}
-)
+##SIFT## target_link_libraries(sift_EF
+##SIFT##   ${catkin_LIBRARIES}
+##SIFT##   ${OpenCV_LIBRARIES}
+##SIFT##   ${GLOG_BOOST_LIBS}
+##SIFT##   ${G2O_LIBS}
+##SIFT## )
+##SIFT## target_link_libraries(visual_odometry_sift
+##SIFT##   ${catkin_LIBRARIES}
+##SIFT##   ${OpenCV_LIBRARIES}
+##SIFT##   ${G2O_LIBS}
+##SIFT## )
 ##SP## target_link_libraries(vo_loop_fnames
 ##SP##   ${catkin_LIBRARIES}
 ##SP##   ${OpenCV_LIBRARIES}

@@ -1,0 +1,51 @@
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/xuzhl/catkin_ws_d/src/dslam_release/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/ninja cmTC_59661 && [1/2] Building C object CMakeFiles/cmTC_59661.dir/src.c.o
+[2/2] Linking C executable cmTC_59661
+FAILED: cmTC_59661 
+: && /usr/bin/gcc-7 -DCMAKE_HAVE_LIBC_PTHREAD -rdynamic CMakeFiles/cmTC_59661.dir/src.c.o -o cmTC_59661   && :
+CMakeFiles/cmTC_59661.dir/src.c.o：在函数‘main’中：
+src.c:(.text+0x3e)：对‘pthread_create’未定义的引用
+src.c:(.text+0x4a)：对‘pthread_detach’未定义的引用
+src.c:(.text+0x56)：对‘pthread_cancel’未定义的引用
+src.c:(.text+0x67)：对‘pthread_join’未定义的引用
+src.c:(.text+0x7b)：对‘pthread_atfork’未定义的引用
+collect2: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/xuzhl/catkin_ws_d/src/dslam_release/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/ninja cmTC_dbe5b && [1/2] Building C object CMakeFiles/cmTC_dbe5b.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_dbe5b
+FAILED: cmTC_dbe5b 
+: && /usr/bin/gcc-7 -DCHECK_FUNCTION_EXISTS=pthread_create -rdynamic CMakeFiles/cmTC_dbe5b.dir/CheckFunctionExists.c.o -o cmTC_dbe5b  -lpthreads && :
+/usr/bin/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+
+
+
